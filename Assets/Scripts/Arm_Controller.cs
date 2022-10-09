@@ -1,0 +1,238 @@
+using System;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.UIElements;
+using Unity.VisualScripting;
+using UnityEngine.Rendering;
+
+public class Arm_Controller : MonoBehaviour
+{
+    enum AxisSelection {X, Y, Z}
+
+    #region Variaveis
+
+    // Definindo colecao de juntas e de controles de juntas 
+    public List<Transform> joints = new List<Transform>();
+    public List<UnityEngine.UI.Slider> sliders = new List<UnityEngine.UI.Slider>();
+    public List<GameObject> inputFields = new List<GameObject>();
+    public Transform EndEffector;
+    public List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y};
+    private float[] jointPositions;
+    
+
+    // Definindo velocidades angulares das juntas 
+    public float TurnRate = 1.0f;
+
+    // Limits
+    [Range(0.0f, 360.0f)]
+    public float maxRotationLimit = 180.0f;
+    [Range(0.0f, 360.0f)]
+    public float minRotationLimit = 0.0f;
+    [Range(0.0f, 360.0f)]
+    public float defaultPosition = 0; 
+
+    /// <summary>
+    /// Altera componente de texto para exibir
+    /// posição do end effector.
+    /// </summary>
+    public GameObject posOut;
+    public GameObject rotOut;
+    private TextMeshProUGUI posText;
+    private TextMeshProUGUI rotText; 
+    private List<TMP_InputField> inputs = new List<TMP_InputField>();
+
+    #endregion
+
+    #region Métodos
+
+    private string floatToString(float number, int decimalNumbers = 2, float offset = 0)
+    {
+        float aux = (float)(Math.Round((double)number, decimalNumbers));
+        return (aux + offset).ToString();
+    }
+
+    private float servo2Unity(float servoPos) { return (-1) * (servoPos - 90); }
+    private float unity2Servo(float unityPos) { return - unityPos + 90; }
+
+    public void resetArmPosition()
+    {
+        for (int i = 0; i < joints.Count; i++)
+        {
+            setJointPosition(0, rotationReferences, i, true);
+            updateJointsText();
+        }
+    }
+
+    private float transformEulerAngles(Transform transform, AxisSelection axis, bool normalize = true)
+    {
+        // Armazena angulacao atual 
+        float auxRot = 0;
+
+        // Convertendo referencia de denavit para a do unity
+        switch (axis)
+        {
+            case AxisSelection.X:
+                auxRot = transform.localEulerAngles.z;
+                break;
+            case AxisSelection.Y:
+                auxRot = transform.localEulerAngles.x;
+                break;
+            case AxisSelection.Z:
+                auxRot = transform.localEulerAngles.y;
+                break;
+        }
+
+        // Normalizando posição das juntas para corresponder a dos servos
+        if (normalize)
+        {
+            if (auxRot > 90)
+            {
+                auxRot = 90 - (auxRot - 360);
+            } else
+            {
+                auxRot = 90 - auxRot;
+            }
+        }
+
+        // Retornando valor
+        return auxRot;
+    }
+
+    public void ProcessSliderInput()
+    {
+        string rotAux = string.Empty;
+
+        // Processando Juntas
+        for (int i = 0; i < joints.Count; i++)
+        {
+            rotAux = rotText.text;
+
+            if (sliders[i].value != 0)
+            {
+                rotAux = string.Empty;
+                jointPositions[i] += (sliders[i].value * TurnRate);
+                jointPositions[i] = Mathf.Clamp(jointPositions[i], minRotationLimit, maxRotationLimit);
+                setJointPosition(servo2Unity(jointPositions[i]), rotationReferences, i);
+                updateJointsText();
+         
+            }
+        }
+        
+    }
+
+    private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
+    {
+        // Atualizando posições se necessário
+        if (updatePositions) { jointPositions[index] = unity2Servo(angularPos); }
+
+        // Conferindo referencia da rotacao
+        switch (axisSelection[index])
+        {
+            case AxisSelection.X:
+                joints[index].localEulerAngles = new Vector3(joints[index].localEulerAngles.x, joints[index].localEulerAngles.y, angularPos);
+                break;
+            case AxisSelection.Z:
+                joints[index].localEulerAngles = new Vector3(joints[index].localEulerAngles.x, angularPos, joints[index].localEulerAngles.z);
+                break;
+            case AxisSelection.Y:
+                joints[index].localEulerAngles = new Vector3(angularPos, joints[index].localEulerAngles.y, joints[index].localEulerAngles.z);
+                break;
+        }
+    }
+
+    private void updateJointsText()
+    {
+        string rotAux = string.Empty;
+        for (int i = 0; i < joints.Count; i++)
+        {
+            // Atualizando posicao final
+            posText.text = "X: " + floatToString(-EndEffector.position.x, offset: 2.6f) + "\nY: " + floatToString((EndEffector.position.z - 2.0975f)) + "\nZ: " + floatToString(EndEffector.position.y);
+
+            // Atualizando rotacao das juntas
+            string auxVal = floatToString(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
+            rotAux += "J" + (i + 1).ToString() + " = " + auxVal + "\n";
+        }
+        rotText.text = rotAux;
+    }
+
+    #endregion
+
+    #region Eventos
+
+    public void ResetSliders()
+    {
+        // Reseta os sliders de volta a 0 quando o click do mouse e leavantado
+        foreach (UnityEngine.UI.Slider slider in sliders) { slider.value = 0; }
+    }
+
+    public void readInputFields()
+    {
+        for (int i = 0; i < inputs.Count; i++)
+        {
+            if (inputs[i].text != string.Empty)
+            {
+                // Recuperando entrada de texto
+                jointPositions[i] = float.Parse(inputs[i].text);
+                jointPositions[i] = Mathf.Clamp(jointPositions[i], 0.0f, 180.0f);
+
+                // Convertendo posição referenciada de servo motor para unity
+                float anglePos = servo2Unity(jointPositions[i]);
+
+                // Alterando posição da junta
+                setJointPosition(anglePos, rotationReferences, i);
+
+                // Reprocessando sliders
+                updateJointsText();
+
+                // Apgando entrada 
+                inputs[i].text = string.Empty;
+
+            }
+        }
+    }
+
+    #endregion
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        // Definindo quantidade de juntas
+        jointPositions = new float[joints.Count];
+
+        // Armazenando posição inicial das juntas
+        for (int i = 0; i < joints.Count; i++)
+        {
+            jointPositions[i] = unity2Servo(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i], false));
+        }
+
+        // Definindo valores iniciais dos sliders
+        foreach (UnityEngine.UI.Slider slider in sliders)
+        {
+            slider.value = 0;   
+            slider.minValue = -1;
+            slider.maxValue = 1;
+        }
+
+        for (int i = 0; i < inputFields.Count; i++) { inputs.Add(inputFields[i].GetComponent<TMP_InputField>()); }
+        posText = posOut.GetComponent<TextMeshProUGUI>();
+        rotText = rotOut.GetComponent<TextMeshProUGUI>();
+        rotText.text = string.Empty;
+
+        // Exibindo angulos inciiais 
+        updateJointsText();
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        // Processando entradas
+        if (Input.GetKeyDown(KeyCode.Return)) readInputFields();
+        if (Input.GetKeyDown(KeyCode.R)) resetArmPosition();
+        ProcessSliderInput();
+    }
+}

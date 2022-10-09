@@ -1,0 +1,28 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Follow_Joint : MonoBehaviour
+{
+    [Header("Tweaks")]
+    [SerializeField] public Transform lookAt;
+    [SerializeField] public Vector3 offset;
+
+    [Header("Logic")]
+    private Camera cam;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        cam = Camera.main;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        Vector3 pos = cam.WorldToScreenPoint(lookAt.position + offset);
+        pos = new Vector3 (pos.x, pos.z, pos.y);
+
+        if (transform.position != pos) transform.position = pos;
+    }
+}
