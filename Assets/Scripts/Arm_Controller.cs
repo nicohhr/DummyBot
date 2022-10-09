@@ -233,6 +233,7 @@ public class Arm_Controller : MonoBehaviour
         // Processando entradas
         if (Input.GetKeyDown(KeyCode.Return)) readInputFields();
         if (Input.GetKeyDown(KeyCode.R)) resetArmPosition();
+        if (Input.GetKeyDown(KeyCode.P)) Python_Executer.ExecIt();
         ProcessSliderInput();
     }
 }
