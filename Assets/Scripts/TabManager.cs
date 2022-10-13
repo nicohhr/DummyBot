@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class TabManager : MonoBehaviour
 {
     [SerializeField] public GameObject[] tabs;
+    [HideInInspector] public static int selectedTabIndex = 0; 
     public void onTabSwitch(GameObject tab)
     {
         tab.SetActive(true);
@@ -14,6 +15,9 @@ public class TabManager : MonoBehaviour
         var tempColor = image.color;
         tempColor.a = 0.0f;
         image.color = tempColor;
+
+        // Atualizando aba selecionada
+        selectedTabIndex = Array.IndexOf(tabs, tab);
 
         for (int i = 0; i < tabs.Length; i++)
         {
@@ -30,6 +34,6 @@ public class TabManager : MonoBehaviour
 
     private void Start()
     {
-        onTabSwitch(tabs[0]);
+        onTabSwitch(tabs[selectedTabIndex]);
     }
 }

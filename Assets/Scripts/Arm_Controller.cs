@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using UnityEngine.UIElements;
 using Unity.VisualScripting;
 using UnityEngine.Rendering;
+using Assets.Scripts;
 
 public class Arm_Controller : MonoBehaviour
 {
@@ -17,12 +18,12 @@ public class Arm_Controller : MonoBehaviour
 
     // Definindo colecao de juntas e de controles de juntas 
     public List<Transform> joints = new List<Transform>();
+    public static List<Transform> simJoints;
     public List<UnityEngine.UI.Slider> sliders = new List<UnityEngine.UI.Slider>();
     public List<GameObject> inputFields = new List<GameObject>();
     public Transform EndEffector;
     public List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y};
-    private float[] jointPositions;
-    
+    public static float[] jointPositions;
 
     // Definindo velocidades angulares das juntas 
     public float TurnRate = 1.0f;
@@ -33,7 +34,15 @@ public class Arm_Controller : MonoBehaviour
     [Range(0.0f, 360.0f)]
     public float minRotationLimit = 0.0f;
     [Range(0.0f, 360.0f)]
-    public float defaultPosition = 0; 
+    public float defaultPosition = 0;
+
+    // Variaveis vindas do python
+    [HideInInspector]
+    public static JointPositions pythonPositions = new JointPositions();
+    [HideInInspector]
+    public static KinematicsInfo forwardKinematics = new KinematicsInfo();
+    [HideInInspector]
+    public static KinematicsInfo inverseKinematics = new KinematicsInfo();
 
     /// <summary>
     /// Altera componente de texto para exibir
@@ -41,8 +50,12 @@ public class Arm_Controller : MonoBehaviour
     /// </summary>
     public GameObject posOut;
     public GameObject rotOut;
+    public GameObject estimatedFkOut;
+    public GameObject estimatedIkOut;
     private TextMeshProUGUI posText;
-    private TextMeshProUGUI rotText; 
+    private TextMeshProUGUI rotText;
+    private TextMeshProUGUI estimatedFkText;
+    private TextMeshProUGUI estimatedIkText; 
     private List<TMP_InputField> inputs = new List<TMP_InputField>();
 
     #endregion
@@ -89,13 +102,8 @@ public class Arm_Controller : MonoBehaviour
         // Normalizando posição das juntas para corresponder a dos servos
         if (normalize)
         {
-            if (auxRot > 90)
-            {
-                auxRot = 90 - (auxRot - 360);
-            } else
-            {
-                auxRot = 90 - auxRot;
-            }
+            if (auxRot > 90) auxRot = 90 - (auxRot - 360);
+            else auxRot = 90 - auxRot;
         }
 
         // Retornando valor
@@ -147,11 +155,11 @@ public class Arm_Controller : MonoBehaviour
     private void updateJointsText()
     {
         string rotAux = string.Empty;
+        // Atualizando posicao final
+        posText.text = "X: " + floatToString(-EndEffector.position.x) + "\nY: " + floatToString((EndEffector.position.z)) + "\nZ: " + floatToString(EndEffector.position.y);
+
         for (int i = 0; i < joints.Count; i++)
         {
-            // Atualizando posicao final
-            posText.text = "X: " + floatToString(-EndEffector.position.x, offset: 2.6f) + "\nY: " + floatToString((EndEffector.position.z - 2.0975f)) + "\nZ: " + floatToString(EndEffector.position.y);
-
             // Atualizando rotacao das juntas
             string auxVal = floatToString(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
             rotAux += "J" + (i + 1).ToString() + " = " + auxVal + "\n";
@@ -195,6 +203,32 @@ public class Arm_Controller : MonoBehaviour
         }
     }
 
+    private void ProcessSocketData()
+    {
+        // Conferir se conexão foi estabelecida 
+        if (PythonCommunication.isConnected)
+        {
+            // Conferir aba selecionada
+            switch (TabManager.selectedTabIndex)
+            {
+                case 0:
+
+                    // Atualizar dados de posição de end effector calculadas pelo python 
+                    estimatedFkText.text = "X: " + floatToString(forwardKinematics.position.x) + "\nY: " + floatToString((forwardKinematics.position.y)) + "\nZ: " + floatToString(forwardKinematics.position.z);
+                    
+                    // Enviando informacoes para o python
+                    PythonCommunication.sendSimulatorData();
+                    break;
+            }
+        }
+
+        // Tab0: 
+        // Tab0: Atualizar dados de posição de end effector calculada pelo python 
+
+        // Tab1: 
+
+    }
+
     #endregion
 
     // Start is called before the first frame update
@@ -202,6 +236,9 @@ public class Arm_Controller : MonoBehaviour
     {
         // Definindo quantidade de juntas
         jointPositions = new float[joints.Count];
+
+        // Passando juntas a variaveis estaticas para utilizacao em outras classes
+        simJoints = this.joints;
 
         // Armazenando posição inicial das juntas
         for (int i = 0; i < joints.Count; i++)
@@ -217,12 +254,14 @@ public class Arm_Controller : MonoBehaviour
             slider.maxValue = 1;
         }
 
+        // Recuperando componentes de entrada de posição 
         for (int i = 0; i < inputFields.Count; i++) { inputs.Add(inputFields[i].GetComponent<TMP_InputField>()); }
         posText = posOut.GetComponent<TextMeshProUGUI>();
         rotText = rotOut.GetComponent<TextMeshProUGUI>();
+        estimatedFkText = estimatedFkOut.GetComponent<TextMeshProUGUI>();
         rotText.text = string.Empty;
 
-        // Exibindo angulos inciiais 
+        // Exibindo angulos inciais 
         updateJointsText();
 
     }
@@ -234,6 +273,7 @@ public class Arm_Controller : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return)) readInputFields();
         if (Input.GetKeyDown(KeyCode.R)) resetArmPosition();
         if (Input.GetKeyDown(KeyCode.P)) Python_Executer.ExecIt();
+        ProcessSocketData();
         ProcessSliderInput();
     }
 }
