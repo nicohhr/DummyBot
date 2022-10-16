@@ -30,79 +30,10 @@ public class PythonCommunication : MonoBehaviour
 
     #region Metodos
 
-    /// <summary>
-    /// Este método lê diretamente os valroes binarios recebidos na conexão. 
-    /// </summary>
-    private static  void GetInfoBytes()
-    {
-        SetConnection();
-
-        while (isRunning)
-        {
-            NetworkStream netStream = client.GetStream();
-            byte[] buffer = new byte[client.ReceiveBufferSize];
-
-            // Recebendo dados do host 
-            int bytesRead = netStream.Read(buffer, 0, 12); // recebendo dados em bytes do Python
-            string output = string.Empty;
-
-            for(int i = 0; i < (12); i++)
-            {
-                output += buffer[i].ToString() + " | ";
-            }
-
-            print(buffer.Length + "-->" +  output);
-        }
-        listener.Stop();
-
-    }
-
-    private static void GetFloat()
-    {
-        SetConnection();
-
-        while (isRunning)
-        {   
-            // Recebendo dados
-            NetworkStream netStream = client.GetStream();
-            byte[] buffer = new byte[4];
-            netStream.Read(buffer, 0, 4); 
-
-            // Convertendo array de dados em float
-            float resultFloat = BitConverter.ToSingle(buffer, 0);
-
-            // Exibindo número resultante 
-            Debug.Log(resultFloat);
-
-        }
-        listener.Stop();
-    }
-
-
-    private static void GetArmInfo()
-    {
-        SetConnection();
-
-        while (isRunning)
-        {
-            NetworkStream netStream = client.GetStream();
-            byte[] buffer = new byte[client.ReceiveBufferSize];
-
-            // Recebendo dados do host 
-            int bytesRead = netStream.Read(buffer, 0, client.ReceiveBufferSize); // Lendo Bytes do Python
-            string dataReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead); // Convertendo dados lidos para string 
-            armVariables = String2Array(dataReceived); // Salvando dados no controlador do manipulador
-            UpdateArmVariables();
-
-            print(buffer.Length + "-->" + dataReceived);
-        }
-        listener.Stop();
-    }
-
     private static void SetConnection()
     {
         localAdress = IPAddress.Parse(connectionIP);
-        listener = new TcpListener(IPAddress.Any, connectionPort);
+        listener = new TcpListener(localAdress, connectionPort);
         listener.Start();
         client = listener.AcceptTcpClient();
         isConnected = true; 
@@ -121,11 +52,12 @@ public class PythonCommunication : MonoBehaviour
 
         return result;
     }
+
     private static void GetFloatArray()
     {
         SetConnection();
 
-        while (isRunning)
+        while (true)
         {
             // Recebendo dados: 12 numeros float, 4 bytes por numero 48 bytes por pacote
             NetworkStream netStream = client.GetStream();
@@ -136,13 +68,11 @@ public class PythonCommunication : MonoBehaviour
             for (int i = 0; i < PACKET_SIZE; i++) { armVariables[i] = BitConverter.ToSingle(buffer, (i * 4)); }
 
             // Exibindo dados resultantes
-            string output = string.Empty;
-            for (int i = 0; i < (PACKET_SIZE); i++) { output += armVariables[i].ToString() + " | "; }
+            //string output = string.Empty;
+            //for (int i = 0; i < (PACKET_SIZE); i++) { output += armVariables[i].ToString() + " | "; }
             UpdateArmVariables();
             //print(output);
-
-        }
-        listener.Stop();
+        }  
     }
 
     private static void UpdateArmVariables()
@@ -156,12 +86,9 @@ public class PythonCommunication : MonoBehaviour
         // Atualizando posição calculada por forward kinematics e inverse kinematics
         Arm_Controller.forwardKinematics.isLocked = true;
         Arm_Controller.forwardKinematics.Set(armVariables[6], armVariables[7], armVariables[8]);
-        print("X: " + (Arm_Controller.forwardKinematics.position.x.ToString()) + "\nY: " + (Arm_Controller.forwardKinematics.position.y.ToString()) + "\nZ: " + (Arm_Controller.forwardKinematics.position.z.ToString()));
+        //print("X: " + (Arm_Controller.forwardKinematics.position.x.ToString()) + "\nY: " + (Arm_Controller.forwardKinematics.position.y.ToString()) + "\nZ: " + (Arm_Controller.forwardKinematics.position.z.ToString()));
         Arm_Controller.inverseKinematics.position.Set(armVariables[9], armVariables[10], armVariables[11]);
         Arm_Controller.forwardKinematics.isLocked = false;
-
-        // Enviando dados de posição das juntas para o python 
-        // sendSimulatorData();
 
     }
 
@@ -179,16 +106,16 @@ public class PythonCommunication : MonoBehaviour
         // Enviando dados para o python
         netStream.Write(simData, 0, simData.Length);
 
-        float[] teste = new float[4];
+        //float[] teste = new float[4];
 
         // Convertendo array de bytes em array de floats
-        for (int i = 0; i < 4; i++) { teste[i] = BitConverter.ToSingle(simData, (i * 4)); }
+        //for (int i = 0; i < 4; i++) { teste[i] = BitConverter.ToSingle(simData, (i * 4)); }
 
         // Exibindo dados resultantes
-        string output = string.Empty;
-        for (int i = 0; i < (4); i++) { output += teste[i].ToString() + " | "; }
+        //string output = string.Empty;
+        //for (int i = 0; i < (4); i++) { output += teste[i].ToString() + " | "; }
 
-        print(output);
+        //print(output);
     }
 
     #endregion
@@ -201,5 +128,16 @@ public class PythonCommunication : MonoBehaviour
         sThread = new Thread(ts);
         sThread.Start();
 
+    }
+
+    private void OnApplicationQuit()
+    {
+        isRunning = false;
+        if (!isRunning)
+        {
+            print("Ending Connection");
+            listener.Stop();
+            client.Close();
+        }
     }
 }
