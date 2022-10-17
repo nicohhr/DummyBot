@@ -234,6 +234,9 @@ public class Arm_Controller : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Lendo arquivo de configurações
+        SettingsManager.Load();
+
         // Definindo quantidade de juntas
         jointPositions = new float[joints.Count];
 
