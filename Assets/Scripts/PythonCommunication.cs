@@ -13,11 +13,10 @@ public class PythonCommunication : MonoBehaviour
 
     private static Thread sThread;
     private static string connectionIP = "127.0.0.1";
-    [SerializeField] public static int connectionPort = 25001;
+    public static int connectionPort = 25001;
     static IPAddress localAdress;
     static TcpListener listener;
     static TcpClient client;
-    static bool isRunning = true;
 
     static private float[] armVariables = new float[PACKET_SIZE];
     static public bool isConnected = false; 
@@ -48,23 +47,30 @@ public class PythonCommunication : MonoBehaviour
 
         return result;
     }
+
     private static void GetFloatArray()
     {
         SetConnection();
 
-        while (true)
+        while (isConnected)
         {
-            // Recebendo dados: 12 numeros float, 4 bytes por numero 48 bytes por pacote
-            NetworkStream netStream = client.GetStream();
-            byte[] buffer = new byte[PACKET_SIZE_BYTES];
-            netStream.Read(buffer, 0, PACKET_SIZE_BYTES);
+            try
+            {
+                // Recebendo dados: 12 numeros float, 4 bytes por numero 48 bytes por pacote
+                NetworkStream netStream = client.GetStream();
+                byte[] buffer = new byte[PACKET_SIZE_BYTES];
+                netStream.Read(buffer, 0, PACKET_SIZE_BYTES);
 
-            // Convertendo array de bytes em array de floats
-            for (int i = 0; i < PACKET_SIZE; i++) { armVariables[i] = BitConverter.ToSingle(buffer, (i * 4)); }
+                // Convertendo array de bytes em array de floats
+                for (int i = 0; i < PACKET_SIZE; i++) { armVariables[i] = BitConverter.ToSingle(buffer, (i * 4)); }
 
-            // Atualizando variaveis 
-            UpdateArmVariables();
-
+                // Atualizando variaveis 
+                UpdateArmVariables();
+            }
+            catch (Exception)
+            {
+                StopConnection();
+            } 
         }
     }
 
@@ -90,32 +96,47 @@ public class PythonCommunication : MonoBehaviour
     /// </summary>
     public static void sendSimulatorData()
     {
-        NetworkStream netStream = client.GetStream();
+        try
+        {
+            NetworkStream netStream = client.GetStream();
 
-        // Convertendo posição das juntas em array de bytes
-        byte[] simData = new byte[Arm_Controller.jointPositions.Length*sizeof(float)];
-        Buffer.BlockCopy(Arm_Controller.jointPositions, 0, simData, 0, simData.Length);
+            // Convertendo posição das juntas em array de bytes
+            byte[] simData = new byte[Arm_Controller.jointPositions.Length * sizeof(float)];
+            Buffer.BlockCopy(Arm_Controller.jointPositions, 0, simData, 0, simData.Length);
 
-        // Enviando dados para o python
-        netStream.Write(simData, 0, simData.Length);
+            // Enviando dados para o python
+            netStream.Write(simData, 0, simData.Length);
+        }
+        catch (InvalidOperationException)
+        {
+            StopConnection();
+        }
     }
 
     #endregion
 
-    // Start is called before the first frame update
-    void Start()
+    public static void StartConnection()
     {
         print("Socket started");
         ThreadStart ts = new ThreadStart(GetFloatArray);
         sThread = new Thread(ts);
         sThread.Start();
+    }
 
+    private static void StopConnection()
+    {
+        isConnected = false;
+        print("Ending Connection []");
+        client.Close();
+        listener.Stop();
+        sThread.Abort();
     }
 
     private void OnApplicationQuit()
     {
-        isRunning = false;
-        if (!isRunning)
+        isConnected = false;
+
+        if (!isConnected)
         {
             print("Ending Connection");
             listener.Stop();

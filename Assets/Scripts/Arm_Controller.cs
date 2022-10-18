@@ -28,7 +28,7 @@ public class Arm_Controller : MonoBehaviour
     // Definindo velocidades angulares das juntas 
     public float TurnRate = 1.0f;
 
-    // Limits
+    // Definindo limites das juntas 
     [Range(0.0f, 360.0f)]
     public float maxRotationLimit = 180.0f;
     [Range(0.0f, 360.0f)]
@@ -44,19 +44,16 @@ public class Arm_Controller : MonoBehaviour
     [HideInInspector]
     public static KinematicsInfo inverseKinematics = new KinematicsInfo();
 
-    /// <summary>
-    /// Altera componente de texto para exibir
-    /// posição do end effector.
-    /// </summary>
-    public GameObject posOut;
-    public GameObject rotOut;
-    public GameObject estimatedFkOut;
-    public GameObject estimatedIkOut;
-    private TextMeshProUGUI posText;
-    private TextMeshProUGUI rotText;
-    private TextMeshProUGUI estimatedFkText;
-    private TextMeshProUGUI estimatedIkText; 
-    private List<TMP_InputField> inputs = new List<TMP_InputField>();
+    // Labels e entradas de texto
+    [SerializeField] public TextMeshProUGUI estimatedFkText; 
+    [SerializeField] public TextMeshProUGUI estimatedIkText; 
+    private List<TMP_InputField> inputs = new List<TMP_InputField>(); 
+
+    // Componentes de texto para exibir posicao
+    [SerializeField] private List<TextMeshProUGUI> posTexts;
+    [SerializeField] private List<TextMeshProUGUI> rotTexts;
+
+    // Componentes de texto para exibir rotacao 
 
     #endregion
 
@@ -112,16 +109,16 @@ public class Arm_Controller : MonoBehaviour
 
     public void ProcessSliderInput()
     {
-        string rotAux = string.Empty;
+        //string rotAux = string.Empty;
 
         // Processando Juntas
         for (int i = 0; i < joints.Count; i++)
         {
-            rotAux = rotText.text;
+            //rotAux = rotText.text;
 
             if (sliders[i].value != 0)
             {
-                rotAux = string.Empty;
+                //rotAux = string.Empty;
                 jointPositions[i] += (sliders[i].value * TurnRate);
                 jointPositions[i] = Mathf.Clamp(jointPositions[i], minRotationLimit, maxRotationLimit);
                 setJointPosition(servo2Unity(jointPositions[i]), rotationReferences, i);
@@ -129,7 +126,6 @@ public class Arm_Controller : MonoBehaviour
          
             }
         }
-        
     }
 
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
@@ -154,17 +150,29 @@ public class Arm_Controller : MonoBehaviour
 
     private void updateJointsText()
     {
-        string rotAux = string.Empty;
-        // Atualizando posicao final
-        posText.text = "X: " + floatToString(-EndEffector.position.x) + "\nY: " + floatToString((EndEffector.position.z)) + "\nZ: " + floatToString(EndEffector.position.y);
-
-        for (int i = 0; i < joints.Count; i++)
+        // Atualizando exibicao de posicao 
+        foreach (TextMeshProUGUI textMesh in posTexts)
         {
-            // Atualizando rotacao das juntas
-            string auxVal = floatToString(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
-            rotAux += "J" + (i + 1).ToString() + " = " + auxVal + "\n";
+            // Atualizando posicao final
+            textMesh.text = "X: " + floatToString(-EndEffector.position.x) + "\nY: " + floatToString((EndEffector.position.z)) + "\nZ: " + floatToString(EndEffector.position.y);
         }
-        rotText.text = rotAux;
+
+        // Atualizando exibicao de rotacao 
+        foreach (TextMeshProUGUI textMesh in rotTexts)
+        {
+            // String auxiliar
+            string rotAux = string.Empty;
+
+            for (int i = 0; i < joints.Count; i++)
+            {
+                // Atualizando rotacao das juntas
+                string auxVal = floatToString(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
+                rotAux += "J" + (i + 1).ToString() + " = " + auxVal + "\n";
+            }
+
+            // Atualizando componentes de texto
+            textMesh.text = rotAux;
+        }
     }
 
     #endregion
@@ -244,10 +252,7 @@ public class Arm_Controller : MonoBehaviour
         simJoints = this.joints;
 
         // Armazenando posição inicial das juntas
-        for (int i = 0; i < joints.Count; i++)
-        {
-            jointPositions[i] = unity2Servo(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i], false));
-        }
+        for (int i = 0; i < joints.Count; i++) { jointPositions[i] = unity2Servo(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i], false)); }
 
         // Definindo valores iniciais dos sliders
         foreach (UnityEngine.UI.Slider slider in sliders)
@@ -259,10 +264,6 @@ public class Arm_Controller : MonoBehaviour
 
         // Recuperando componentes de entrada de posição 
         for (int i = 0; i < inputFields.Count; i++) { inputs.Add(inputFields[i].GetComponent<TMP_InputField>()); }
-        posText = posOut.GetComponent<TextMeshProUGUI>();
-        rotText = rotOut.GetComponent<TextMeshProUGUI>();
-        estimatedFkText = estimatedFkOut.GetComponent<TextMeshProUGUI>();
-        rotText.text = string.Empty;
 
         // Exibindo angulos inciais 
         updateJointsText();
@@ -275,7 +276,11 @@ public class Arm_Controller : MonoBehaviour
         // Processando entradas
         if (Input.GetKeyDown(KeyCode.Return)) readInputFields();
         if (Input.GetKeyDown(KeyCode.R)) resetArmPosition();
-        if (Input.GetKeyDown(KeyCode.P)) Python_Executer.ExecIt();
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            PythonCommunication.StartConnection();
+            Python_Executer.ExecIt();
+        }
         ProcessSocketData();
         ProcessSliderInput();
     }

@@ -3772,10 +3772,14 @@ MonoBehaviour:
   maxRotationLimit: 180
   minRotationLimit: 0
   defaultPosition: 0
-  posOut: {fileID: 1400196100}
-  rotOut: {fileID: 1262110458}
-  estimatedFkOut: {fileID: 1242680481}
-  estimatedIkOut: {fileID: 0}
+  estimatedFkText: {fileID: 1242680483}
+  estimatedIkText: {fileID: 0}
+  posTexts:
+  - {fileID: 1400196102}
+  - {fileID: 1114465737}
+  rotTexts:
+  - {fileID: 1262110460}
+  - {fileID: 1424773412}
 --- !u!4 &518669035
 Transform:
   m_ObjectHideFlags: 0
