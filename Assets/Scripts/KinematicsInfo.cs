@@ -12,7 +12,7 @@ namespace Assets.Scripts
         private bool _isLocked;
 
         public Vector3 position { get { return _position; } set { if (this._isLocked) this._position = value; } }
-        public bool isLocked { get { return _isLocked; } set { this._isLocked = value; }}
+        public bool isLocked { get { return _isLocked; } set { this._isLocked = value; } }
 
         public void Set(float x, float y, float z)
         {
@@ -28,6 +28,22 @@ namespace Assets.Scripts
             this._position = new Vector3();
             this._position.Set(0, 0, 0);
         }
+        public float[] positions
+        {
+            get
+            {
+                float[] result = new float[3];
+                result[0] = _position.x;
+                result[1] = _position.y;
+                result[2] = _position.z;
 
+                return result;
+            }
+
+            set
+            {
+                Set(value[0], value[1], value[2]);
+            }
+        }
     }
 }

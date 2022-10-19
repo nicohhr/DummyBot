@@ -19,7 +19,8 @@ public class Arm_Controller : MonoBehaviour
     // Definindo colecao de juntas e de controles de juntas 
     public List<Transform> joints = new List<Transform>();
     public static List<Transform> simJoints;
-    public List<UnityEngine.UI.Slider> sliders = new List<UnityEngine.UI.Slider>();
+    public List<UnityEngine.UI.Slider> fkSliders = new List<UnityEngine.UI.Slider>();
+    public List<UnityEngine.UI.Slider> ikSliders = new List<UnityEngine.UI.Slider>();
     public List<GameObject> inputFields = new List<GameObject>();
     public Transform EndEffector;
     public List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y};
@@ -52,6 +53,7 @@ public class Arm_Controller : MonoBehaviour
     // Componentes de texto para exibir posicao
     [SerializeField] private List<TextMeshProUGUI> posTexts;
     [SerializeField] private List<TextMeshProUGUI> rotTexts;
+    [SerializeField] private List<TextMeshProUGUI> desiredPosTexts;  
 
     // Componentes de texto para exibir rotacao 
 
@@ -73,7 +75,7 @@ public class Arm_Controller : MonoBehaviour
         for (int i = 0; i < joints.Count; i++)
         {
             setJointPosition(0, rotationReferences, i, true);
-            updateJointsText();
+            updateText();
         }
     }
 
@@ -109,23 +111,51 @@ public class Arm_Controller : MonoBehaviour
 
     public void ProcessSliderInput()
     {
-        //string rotAux = string.Empty;
 
-        // Processando Juntas
-        for (int i = 0; i < joints.Count; i++)
+        switch (TabManager.selectedTabIndex)
         {
-            //rotAux = rotText.text;
+            // Forward Kinematics tab
+            case 0:
 
-            if (sliders[i].value != 0)
-            {
-                //rotAux = string.Empty;
-                jointPositions[i] += (sliders[i].value * TurnRate);
-                jointPositions[i] = Mathf.Clamp(jointPositions[i], minRotationLimit, maxRotationLimit);
-                setJointPosition(servo2Unity(jointPositions[i]), rotationReferences, i);
-                updateJointsText();
-         
-            }
+                // Processando Juntas
+                for (int i = 0; i < joints.Count; i++)
+                {
+                    //rotAux = rotText.text;
+
+                    if (fkSliders[i].value != 0)
+                    {
+                        //rotAux = string.Empty;
+                        jointPositions[i] += (fkSliders[i].value * TurnRate);
+                        jointPositions[i] = Mathf.Clamp(jointPositions[i], minRotationLimit, maxRotationLimit);
+                        setJointPosition(servo2Unity(jointPositions[i]), rotationReferences, i);
+                        updateText();
+
+                    }
+                }
+                break;
+
+            // Inverse Kinematics tab
+            case 1:
+
+                // Recuperando posição das juntas
+                float[] ikPositions = inverseKinematics.positions;
+
+                // Processando eixos cartesianos 
+                for (int i = 0; i < 3; i++)
+                {
+                    // Aplicando variação dos sliders 
+                    ikPositions[i] += (ikSliders[i].value * TurnRate/10);
+                    ikPositions[i] = Mathf.Clamp(ikPositions[i], -100, 100);
+                    updateText();
+                }
+
+                // Repassando valores para a instância kinetic info 
+                inverseKinematics.positions = ikPositions;
+
+                break; 
         }
+
+        
     }
 
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
@@ -148,7 +178,7 @@ public class Arm_Controller : MonoBehaviour
         }
     }
 
-    private void updateJointsText()
+    private void updateText()
     {
         // Atualizando exibicao de posicao 
         foreach (TextMeshProUGUI textMesh in posTexts)
@@ -182,7 +212,8 @@ public class Arm_Controller : MonoBehaviour
     public void ResetSliders()
     {
         // Reseta os sliders de volta a 0 quando o click do mouse e leavantado
-        foreach (UnityEngine.UI.Slider slider in sliders) { slider.value = 0; }
+        foreach (UnityEngine.UI.Slider slider in fkSliders) { slider.value = 0; }
+        foreach (UnityEngine.UI.Slider slider in ikSliders) { slider.value = 0; }
     }
 
     public void readInputFields()
@@ -202,7 +233,7 @@ public class Arm_Controller : MonoBehaviour
                 setJointPosition(anglePos, rotationReferences, i);
 
                 // Reprocessando sliders
-                updateJointsText();
+                updateText();
 
                 // Apgando entrada 
                 inputs[i].text = string.Empty;
@@ -219,21 +250,36 @@ public class Arm_Controller : MonoBehaviour
             // Conferir aba selecionada
             switch (TabManager.selectedTabIndex)
             {
+                // Forward Kinematics tab
                 case 0:
 
                     // Atualizar dados de posição de end effector calculadas pelo python 
                     estimatedFkText.text = "X: " + floatToString(forwardKinematics.position.x) + "\nY: " + floatToString((forwardKinematics.position.y)) + "\nZ: " + floatToString(forwardKinematics.position.z);
                     
                     // Enviando informacoes para o python
-                    PythonCommunication.sendSimulatorData();
+                    PythonCommunication.sendSimulatorData(ConnectionMode.FK);
+                    break;
+
+                // Inverse kinematics tab 
+                case 1:
+
+                    // Atualizar posição das juntas a partir dos dados recebidos do python 
+                    foreach (TextMeshProUGUI textMesh in desiredPosTexts)
+                    {
+                        // Atualizando posicao desejadam
+                        textMesh.text = "X = " + floatToString(inverseKinematics.position.x) + " \nY = " + floatToString(inverseKinematics.position.y) + " \nZ = " + floatToString(inverseKinematics.position.z);
+                    }
+
+                    // Enviando dados de posicao desejada para o python 
+                    PythonCommunication.sendSimulatorData(ConnectionMode.IK);
                     break;
             }
+        } else
+        {
+            // Mostrando campo como vazio
+            estimatedFkText.text = string.Empty;
+            foreach (TextMeshProUGUI textMesh in desiredPosTexts) { textMesh.text = string.Empty; }
         }
-
-        // Tab0: 
-        // Tab0: Atualizar dados de posição de end effector calculada pelo python 
-
-        // Tab1: 
 
     }
 
@@ -254,19 +300,30 @@ public class Arm_Controller : MonoBehaviour
         // Armazenando posição inicial das juntas
         for (int i = 0; i < joints.Count; i++) { jointPositions[i] = unity2Servo(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i], false)); }
 
-        // Definindo valores iniciais dos sliders
-        foreach (UnityEngine.UI.Slider slider in sliders)
+        // Definindo valores iniciais dos sliders fk
+        foreach (UnityEngine.UI.Slider slider in fkSliders)
         {
             slider.value = 0;   
             slider.minValue = -1;
             slider.maxValue = 1;
         }
 
+        // Definindo valores iniciais dos sliders ik
+        foreach (UnityEngine.UI.Slider slider in ikSliders)
+        {
+            slider.value = 0;
+            slider.minValue = -1;
+            slider.maxValue = 1;
+        }
+
+        // Definindo posicao desejada incial
+        inverseKinematics.Set(-EndEffector.position.x, EndEffector.position.z, EndEffector.position.y);
+
         // Recuperando componentes de entrada de posição 
         for (int i = 0; i < inputFields.Count; i++) { inputs.Add(inputFields[i].GetComponent<TMP_InputField>()); }
 
         // Exibindo angulos inciais 
-        updateJointsText();
+        updateText();
 
     }
 

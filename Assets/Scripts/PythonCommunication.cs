@@ -4,6 +4,12 @@ using UnityEngine;
 using System.Threading;
 using System;
 
+public enum ConnectionMode
+{
+    FK,      // Forward Kinematics
+    IK       // Inverse Kinematics 
+}
+
 public class PythonCommunication : MonoBehaviour
 {
     private const int PACKET_SIZE_BYTES = 48;
@@ -19,7 +25,8 @@ public class PythonCommunication : MonoBehaviour
     static TcpClient client;
 
     static private float[] armVariables = new float[PACKET_SIZE];
-    static public bool isConnected = false; 
+    static public bool isConnected = false;
+    private static bool hasStarted = false;
 
     #endregion
 
@@ -29,7 +36,7 @@ public class PythonCommunication : MonoBehaviour
     {
         localAdress = IPAddress.Parse(connectionIP);
         listener = new TcpListener(IPAddress.Any, connectionPort);
-        listener.Start();
+        listener.Start(); 
         client = listener.AcceptTcpClient();
         isConnected = true; 
     }
@@ -86,7 +93,6 @@ public class PythonCommunication : MonoBehaviour
         Arm_Controller.forwardKinematics.isLocked = true;
         Arm_Controller.forwardKinematics.Set(armVariables[6], armVariables[7], armVariables[8]);
         //print("X: " + (Arm_Controller.forwardKinematics.position.x.ToString()) + "\nY: " + (Arm_Controller.forwardKinematics.position.y.ToString()) + "\nZ: " + (Arm_Controller.forwardKinematics.position.z.ToString()));
-        Arm_Controller.inverseKinematics.position.Set(armVariables[9], armVariables[10], armVariables[11]);
         Arm_Controller.forwardKinematics.isLocked = false;
 
     }
@@ -94,42 +100,84 @@ public class PythonCommunication : MonoBehaviour
     /// <summary>
     /// Envia posição das juntas para o programa 
     /// </summary>
-    public static void sendSimulatorData()
+    public static void sendSimulatorData(ConnectionMode mode)
     {
-        try
-        {
-            NetworkStream netStream = client.GetStream();
 
-            // Convertendo posição das juntas em array de bytes
-            byte[] simData = new byte[Arm_Controller.jointPositions.Length * sizeof(float)];
-            Buffer.BlockCopy(Arm_Controller.jointPositions, 0, simData, 0, simData.Length);
-
-            // Enviando dados para o python
-            netStream.Write(simData, 0, simData.Length);
-        }
-        catch (InvalidOperationException)
+        switch (mode)
         {
-            StopConnection();
-        }
+            case ConnectionMode.FK:
+
+                try
+                {
+                    // Inicializando stream de dados
+                    NetworkStream netStream = client.GetStream();
+
+                    // Convertendo posição das juntas em array de bytes
+                    byte[] simData = new byte[Arm_Controller.jointPositions.Length * sizeof(float)];
+                    Buffer.BlockCopy(Arm_Controller.jointPositions, 0, simData, 0, simData.Length);
+
+                    // Enviando dados para o python
+                    netStream.Write(simData, 0, simData.Length);
+                }
+                catch (InvalidOperationException)
+                {
+                    StopConnection();
+                }
+                break;
+
+            case ConnectionMode.IK:
+
+                try
+                {
+                    // Inicializando stream de dados
+                    NetworkStream netStream = client.GetStream();
+
+                    // Convertendo posição desejada em array de bytes
+                    byte[] simData = new byte[3*sizeof(float)];
+                    float[] desiredPos = { Arm_Controller.inverseKinematics.position.x, Arm_Controller.inverseKinematics.position.y, Arm_Controller.inverseKinematics.position.z };
+                    Buffer.BlockCopy(desiredPos, 0, simData, 0, simData.Length);
+
+                    // Enviando dados para o python
+                    netStream.Write(simData, 0, simData.Length);
+
+                }
+                catch (InvalidOperationException)
+                {
+                    StopConnection();
+                }
+                break;
+        } 
     }
 
     #endregion
 
     public static void StartConnection()
     {
-        print("Socket started");
-        ThreadStart ts = new ThreadStart(GetFloatArray);
-        sThread = new Thread(ts);
-        sThread.Start();
+        // Interrompendo conexao caso ja inicializada 
+        if (!hasStarted)
+        {
+            // Inicializando novo socket
+            print("Socket started");
+            ThreadStart ts = new ThreadStart(GetFloatArray);
+            sThread = new Thread(ts);
+            sThread.Start();
+            hasStarted = true;
+        }
     }
 
     private static void StopConnection()
     {
         isConnected = false;
+        hasStarted = false;
         print("Ending Connection []");
         client.Close();
         listener.Stop();
         sThread.Abort();
+    }
+
+    private void Start()
+    {
+        StartConnection();
     }
 
     private void OnApplicationQuit()
