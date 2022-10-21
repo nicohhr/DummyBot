@@ -87,7 +87,16 @@ public class PythonCommunication : MonoBehaviour
         // Atualizando posições (primeiros 6 valores da entrada)
         Arm_Controller.pythonPositions.isLocked = true;
         for (int i = 0; i < 4; i++) { Arm_Controller.pythonPositions.positions[i] = armVariables[i]; }
-        Arm_Controller.pythonPositions.isLocked = false; 
+        Arm_Controller.pythonPositions.isLocked = false;
+
+        string outputText = string.Empty;
+        for (int i = 0; i < armVariables.Length; i++)
+        {
+            outputText += armVariables[i] + " | ";
+        }
+
+        outputText += "\n";
+        print(outputText);
 
         // Atualizando posição calculada por forward kinematics e inverse kinematics
         Arm_Controller.forwardKinematics.isLocked = true;

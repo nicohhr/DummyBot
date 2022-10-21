@@ -263,11 +263,16 @@ public class Arm_Controller : MonoBehaviour
                 // Inverse kinematics tab 
                 case 1:
 
-                    // Atualizar posição das juntas a partir dos dados recebidos do python 
+                    // Atualizando posicao desejada exibida
                     foreach (TextMeshProUGUI textMesh in desiredPosTexts)
                     {
-                        // Atualizando posicao desejadam
                         textMesh.text = "X = " + floatToString(inverseKinematics.position.x) + " \nY = " + floatToString(inverseKinematics.position.y) + " \nZ = " + floatToString(inverseKinematics.position.z);
+                    }
+
+                    // Atualizar posição das juntas a partir dos dados recebidos do python 
+                    for (int i = 0; i < joints.Count; i++)
+                    {
+                        setJointPosition(servo2Unity(pythonPositions.positions[i]), rotationReferences, i, true);
                     }
 
                     // Enviando dados de posicao desejada para o python 
