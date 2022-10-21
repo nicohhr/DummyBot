@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using UnityEngine;
 using System.Threading;
 using System;
+using Assets.Scripts;
 
 public enum ConnectionMode
 {
@@ -27,6 +28,7 @@ public class PythonCommunication : MonoBehaviour
     static private float[] armVariables = new float[PACKET_SIZE];
     static public bool isConnected = false;
     private static bool hasStarted = false;
+    public static bool validPositions;
 
     #endregion
 
@@ -83,12 +85,29 @@ public class PythonCommunication : MonoBehaviour
 
     private static void UpdateArmVariables()
     {
+        // Indica validade das posicoes
+        validPositions = false;
 
-        // Atualizando posições (primeiros 6 valores da entrada)
-        Arm_Controller.pythonPositions.isLocked = true;
-        for (int i = 0; i < 4; i++) { Arm_Controller.pythonPositions.positions[i] = armVariables[i]; }
-        Arm_Controller.pythonPositions.isLocked = false;
+        // Conferindo se calculo de IK é válido (inválido com todas as juntas em 0)
+        for (int i = 0; i < 6; i++)
+        {
+            if (armVariables[i] != 0)
+            {
+                validPositions = true;
+                break;
+            } 
+        }
 
+        // Em caso das posicoes serem validas
+        if (validPositions)
+        {
+            // Atualizando posições (primeiros 6 valores da entrada)
+            Arm_Controller.pythonPositions.isLocked = true;
+            for (int i = 0; i < 4; i++) { Arm_Controller.pythonPositions.positions[i] = armVariables[i]; }
+            Arm_Controller.pythonPositions.isLocked = false;
+        }
+
+        // Exibindo resultados
         string outputText = string.Empty;
         for (int i = 0; i < armVariables.Length; i++)
         {

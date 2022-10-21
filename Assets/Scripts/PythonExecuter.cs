@@ -17,13 +17,13 @@ public class Python_Executer : MonoBehaviour
 
     #endregion
 
-    public static void ExecIt()
+    public static void ExecIt(string scriptPath)
     {
         // Definindo caminho do interpretador 
         processStart.FileName = $@"{SettingsManager.settings.VenvPath}";
 
         // Definindo Scritp a ser executado
-        processStart.Arguments = $"\"{SettingsManager.settings.FkScriptPath}\"";
+        processStart.Arguments = $"\"{scriptPath}\"";
 
         // Executando processo
         Process.Start(processStart);

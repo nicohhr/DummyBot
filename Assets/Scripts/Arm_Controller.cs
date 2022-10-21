@@ -22,8 +22,9 @@ public class Arm_Controller : MonoBehaviour
     public List<UnityEngine.UI.Slider> fkSliders = new List<UnityEngine.UI.Slider>();
     public List<UnityEngine.UI.Slider> ikSliders = new List<UnityEngine.UI.Slider>();
     public List<GameObject> inputFields = new List<GameObject>();
-    public Transform EndEffector;
-    public List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y};
+    public Transform EndEffectorFk;
+    public Transform EndEffectorIk;
+    public List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y };
     public static float[] jointPositions;
 
     // Definindo velocidades angulares das juntas 
@@ -51,11 +52,12 @@ public class Arm_Controller : MonoBehaviour
     private List<TMP_InputField> inputs = new List<TMP_InputField>(); 
 
     // Componentes de texto para exibir posicao
-    [SerializeField] private List<TextMeshProUGUI> posTexts;
-    [SerializeField] private List<TextMeshProUGUI> rotTexts;
+    [SerializeField] private List<TextMeshProUGUI> fkPosTexts;
+    [SerializeField] private List<TextMeshProUGUI> ikPosTexts;
     [SerializeField] private List<TextMeshProUGUI> desiredPosTexts;  
 
     // Componentes de texto para exibir rotacao 
+    [SerializeField] private List<TextMeshProUGUI> rotTexts;
 
     #endregion
 
@@ -144,8 +146,13 @@ public class Arm_Controller : MonoBehaviour
                 for (int i = 0; i < 3; i++)
                 {
                     // Aplicando variação dos sliders 
-                    ikPositions[i] += (ikSliders[i].value * TurnRate/10);
-                    ikPositions[i] = Mathf.Clamp(ikPositions[i], -100, 100);
+                    ikPositions[i] += (ikSliders[i].value * TurnRate/20);
+
+                    // Clamping do valor
+                    if (i == 1) ikPositions[i] = Mathf.Clamp(ikPositions[i], -100, 100);
+                    else ikPositions[i] = Mathf.Clamp(ikPositions[i], 0, 100);
+
+                    // Atualizando texto
                     updateText();
                 }
 
@@ -153,9 +160,7 @@ public class Arm_Controller : MonoBehaviour
                 inverseKinematics.positions = ikPositions;
 
                 break; 
-        }
-
-        
+        } 
     }
 
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
@@ -180,11 +185,18 @@ public class Arm_Controller : MonoBehaviour
 
     private void updateText()
     {
-        // Atualizando exibicao de posicao 
-        foreach (TextMeshProUGUI textMesh in posTexts)
+        // Atualizando exibicao de posicao fk 
+        foreach (TextMeshProUGUI textMesh in fkPosTexts)
         {
             // Atualizando posicao final
-            textMesh.text = "X: " + floatToString(-EndEffector.position.x) + "\nY: " + floatToString((EndEffector.position.z)) + "\nZ: " + floatToString(EndEffector.position.y);
+            textMesh.text = "X: " + floatToString(-EndEffectorFk.position.x) + "\nY: " + floatToString((EndEffectorFk.position.z)) + "\nZ: " + floatToString(EndEffectorFk.position.y);
+        }
+
+        // Atualizando exibicao de posicao ik 
+        foreach (TextMeshProUGUI textMesh in ikPosTexts)
+        {
+            // Atualizando posicao final
+            textMesh.text = "X: " + floatToString(-EndEffectorIk.position.x) + "\nY: " + floatToString((EndEffectorIk.position.z)) + "\nZ: " + floatToString(EndEffectorIk.position.y);
         }
 
         // Atualizando exibicao de rotacao 
@@ -322,7 +334,7 @@ public class Arm_Controller : MonoBehaviour
         }
 
         // Definindo posicao desejada incial
-        inverseKinematics.Set(-EndEffector.position.x, EndEffector.position.z, EndEffector.position.y);
+        inverseKinematics.Set(-EndEffectorIk.position.x, EndEffectorIk.position.z, EndEffectorIk.position.y);
 
         // Recuperando componentes de entrada de posição 
         for (int i = 0; i < inputFields.Count; i++) { inputs.Add(inputFields[i].GetComponent<TMP_InputField>()); }
@@ -336,13 +348,9 @@ public class Arm_Controller : MonoBehaviour
     void Update()
     {
         // Processando entradas
-        if (Input.GetKeyDown(KeyCode.Return)) readInputFields();
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) readInputFields();
         if (Input.GetKeyDown(KeyCode.R)) resetArmPosition();
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            PythonCommunication.StartConnection();
-            Python_Executer.ExecIt();
-        }
+        if (Input.GetKeyDown(KeyCode.P)) StartScriptBtn.StartIt();
         ProcessSocketData();
         ProcessSliderInput();
     }

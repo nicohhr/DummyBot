@@ -357,6 +357,7 @@
 "Assets/Scripts/Buttons/HidePanelButton.cs"
 "Assets/Scripts/Buttons/SaveSettingsBtn.cs"
 "Assets/Scripts/Buttons/ShowPanelButton.cs"
+"Assets/Scripts/Buttons/StartScriptBtn.cs"
 "Assets/Scripts/ComponentEvents/SettingsInputsEvent.cs"
 "Assets/Scripts/Enums/PanelShowBehaviour.cs"
 "Assets/Scripts/Follow_Joint.cs"

@@ -20,7 +20,8 @@ namespace Assets.Scripts
             set { if (this._isLocked) this._positions = value; } 
         }
         public bool isLocked { get { return this._isLocked; } set { this._isLocked = value; } }
-
+        
+        // Construtor
         public JointPositions()
         {
             this._isLocked = false;
@@ -28,6 +29,5 @@ namespace Assets.Scripts
             this._positions = new float[_jointNumber];
             for (int i = 0; i < this._jointNumber; i++) { this._positions[i] = 90.0f; }
         }
-
     }
 }
