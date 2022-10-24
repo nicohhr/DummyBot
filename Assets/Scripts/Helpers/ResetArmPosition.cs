@@ -57,7 +57,7 @@ public class ResetArmPosition : MonoBehaviour
     void Update()
     {
 
-        if (Input.GetKeyDown(KeyCode.R) && !RestartMode && !SetArmPosition.SetMode)
+        if (Input.GetKeyDown(KeyCode.R) && !RestartMode && !SetArmPosition.SetMode && TabManager.selectedTabIndex == 0)
         {
             RestartMode = true;
             print("Seting Position");

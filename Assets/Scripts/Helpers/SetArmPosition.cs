@@ -47,7 +47,7 @@ public class SetArmPosition : MonoBehaviour
 
     void SummSub(float[] deltas, int jointIndex)
     {
-        // Recuperar posição e arredondar para duas casas decimais
+        // Recuperar posição e arredondar
         float actualPos = (float)(Math.Round((double)Arm_Controller.jointPositions[jointIndex], decimals));
 
         // Somando / Subtraindo valor da posição
@@ -64,7 +64,7 @@ public class SetArmPosition : MonoBehaviour
     // Atualizado uma vez por frame
     void Update()
     {
-        if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && !SetMode && !ResetArmPosition.RestartMode)
+        if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && TabManager.selectedTabIndex == 0 && !SetMode && !ResetEndEffectorPos.SetMode && !ResetArmPosition.RestartMode)
         {
             // Recuperando posição desejada 
             for (int i = 0; i < inputFields.Count; i++)

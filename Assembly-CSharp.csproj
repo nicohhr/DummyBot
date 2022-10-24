@@ -113,10 +113,12 @@
     <Compile Include="Assets\Scripts\Follow_Joint.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TeleType.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexZoom.cs" />
+    <Compile Include="Assets\Scripts\Helpers\ResetArmPosition.cs" />
     <Compile Include="Assets\Scripts\Buttons\HidePanelButton.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01.cs" />
-    <Compile Include="Assets\Scripts\Helpers\ResetArmPosition.cs" />
     <Compile Include="Assets\Scripts\Helpers\SetArmPosition.cs" />
+    <Compile Include="Assets\Scripts\Helpers\SetEndEffectorPos.cs" />
+    <Compile Include="Assets\Scripts\Helpers\ResetEndEffectorPos.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

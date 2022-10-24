@@ -28,6 +28,7 @@ namespace Assets.Scripts
             this._position = new Vector3();
             this._position.Set(0, 0, 0);
         }
+
         public float[] positions
         {
             get
@@ -45,5 +46,22 @@ namespace Assets.Scripts
                 Set(value[0], value[1], value[2]);
             }
         }
+
+        public void setPosition(float position, int axisIndex)
+        {
+            switch (axisIndex)
+            {
+                case 0:
+                    this._position.x = position;    
+                    break;
+                case 1:
+                    this._position.y = position;
+                    break;
+                case 2:
+                    this._position.z = position;
+                    break;
+            }
+        }
+        
     }
 }

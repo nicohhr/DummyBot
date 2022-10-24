@@ -62,6 +62,7 @@ public class Arm_Controller : MonoBehaviour
     public static List<TextMeshProUGUI> sRotTexts;
     public static Transform sEndEffectorFk;
     public static Transform sEndEffectorIk;
+    public static Vector3 initialPos;
 
     #endregion
 
@@ -76,17 +77,6 @@ public class Arm_Controller : MonoBehaviour
     public static float servo2Unity(float servoPos) { return (-1) * (servoPos - 90); }
 
     public static float unity2Servo(float unityPos) { return - unityPos + 90; }
-
-    public void resetArmPosition()
-    {
-        //for (int i = 0; i < joints.Count; i++)
-        //{
-        //    setJointPosition(0, rotationReferences, i, true);
-        //    updateText();
-        //}
-        float[] initialPos = {90.0F, 90.0F, 90.0F, 90.0F};
-    }
-
 
     public static float transformEulerAngles(Transform transform, AxisSelection axis, bool normalize = true)
     {
@@ -350,6 +340,12 @@ public class Arm_Controller : MonoBehaviour
 
         // Definindo posicao desejada incial
         inverseKinematics.Set(-EndEffectorIk.position.x, EndEffectorIk.position.z, EndEffectorIk.position.y);
+        initialPos = EndEffectorIk.transform.position;
+        // Definindo posição de reset desejada
+        ResetEndEffectorPos.desiredPosition[2] = initialPos.y;
+        ResetEndEffectorPos.desiredPosition[1] = initialPos.z;
+        ResetEndEffectorPos.desiredPosition[0] = -initialPos.x;
+        Debug.Log("Initial Positions: " + ResetEndEffectorPos.desiredPosition[0].ToString() + " " + ResetEndEffectorPos.desiredPosition[1].ToString() + " " + ResetEndEffectorPos.desiredPosition[2].ToString());
 
         // Recuperando componentes de entrada de posição 
         for (int i = 0; i < inputFields.Count; i++) { inputs.Add(inputFields[i].GetComponent<TMP_InputField>()); }
