@@ -1,18 +1,13 @@
 using System;
-using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.UIElements;
-using Unity.VisualScripting;
-using UnityEngine.Rendering;
 using Assets.Scripts;
+using System.Linq;
 
 public class Arm_Controller : MonoBehaviour
 {
-    enum AxisSelection {X, Y, Z}
+    public enum AxisSelection {X, Y, Z}
 
     #region Variaveis
 
@@ -24,7 +19,7 @@ public class Arm_Controller : MonoBehaviour
     public List<GameObject> inputFields = new List<GameObject>();
     public Transform EndEffectorFk;
     public Transform EndEffectorIk;
-    public List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y };
+    public static List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y };
     public static float[] jointPositions;
 
     // Definindo velocidades angulares das juntas 
@@ -59,29 +54,41 @@ public class Arm_Controller : MonoBehaviour
     // Componentes de texto para exibir rotacao 
     [SerializeField] private List<TextMeshProUGUI> rotTexts;
 
+    // Variaveis estatics 
+    public static float minRotLimit; 
+    public static float maxRotLimit;
+    public static List<TextMeshProUGUI> sFkPosTexts;
+    public static List<TextMeshProUGUI> sIkPosTexts;
+    public static List<TextMeshProUGUI> sRotTexts;
+    public static Transform sEndEffectorFk;
+    public static Transform sEndEffectorIk;
+
     #endregion
 
     #region Métodos
 
-    private string floatToString(float number, int decimalNumbers = 2, float offset = 0)
+    private static string floatToString(float number, int decimalNumbers = 2, float offset = 0)
     {
         float aux = (float)(Math.Round((double)number, decimalNumbers));
         return (aux + offset).ToString();
     }
 
-    private float servo2Unity(float servoPos) { return (-1) * (servoPos - 90); }
-    private float unity2Servo(float unityPos) { return - unityPos + 90; }
+    public static float servo2Unity(float servoPos) { return (-1) * (servoPos - 90); }
+
+    public static float unity2Servo(float unityPos) { return - unityPos + 90; }
 
     public void resetArmPosition()
     {
-        for (int i = 0; i < joints.Count; i++)
-        {
-            setJointPosition(0, rotationReferences, i, true);
-            updateText();
-        }
+        //for (int i = 0; i < joints.Count; i++)
+        //{
+        //    setJointPosition(0, rotationReferences, i, true);
+        //    updateText();
+        //}
+        float[] initialPos = {90.0F, 90.0F, 90.0F, 90.0F};
     }
 
-    private float transformEulerAngles(Transform transform, AxisSelection axis, bool normalize = true)
+
+    public static float transformEulerAngles(Transform transform, AxisSelection axis, bool normalize = true)
     {
         // Armazena angulacao atual 
         float auxRot = 0;
@@ -167,6 +174,7 @@ public class Arm_Controller : MonoBehaviour
     {
         // Atualizando posições se necessário
         if (updatePositions) { jointPositions[index] = unity2Servo(angularPos); }
+        //print("i " + index.ToString() + "-> " + jointPositions[index].ToString());
 
         // Conferindo referencia da rotacao
         switch (axisSelection[index])
@@ -183,32 +191,32 @@ public class Arm_Controller : MonoBehaviour
         }
     }
 
-    private void updateText()
+    public static void updateText()
     {
         // Atualizando exibicao de posicao fk 
-        foreach (TextMeshProUGUI textMesh in fkPosTexts)
+        foreach (TextMeshProUGUI textMesh in sFkPosTexts)
         {
             // Atualizando posicao final
-            textMesh.text = "X: " + floatToString(-EndEffectorFk.position.x) + "\nY: " + floatToString((EndEffectorFk.position.z)) + "\nZ: " + floatToString(EndEffectorFk.position.y);
+            textMesh.text = "X: " + floatToString(-sEndEffectorFk.position.x) + "\nY: " + floatToString((sEndEffectorFk.position.z)) + "\nZ: " + floatToString(sEndEffectorFk.position.y);
         }
 
         // Atualizando exibicao de posicao ik 
-        foreach (TextMeshProUGUI textMesh in ikPosTexts)
+        foreach (TextMeshProUGUI textMesh in sIkPosTexts)
         {
             // Atualizando posicao final
-            textMesh.text = "X: " + floatToString(-EndEffectorIk.position.x) + "\nY: " + floatToString((EndEffectorIk.position.z)) + "\nZ: " + floatToString(EndEffectorIk.position.y);
+            textMesh.text = "X: " + floatToString(-sEndEffectorIk.position.x) + "\nY: " + floatToString((sEndEffectorIk.position.z)) + "\nZ: " + floatToString(sEndEffectorIk.position.y);
         }
 
         // Atualizando exibicao de rotacao 
-        foreach (TextMeshProUGUI textMesh in rotTexts)
+        foreach (TextMeshProUGUI textMesh in sRotTexts)
         {
             // String auxiliar
             string rotAux = string.Empty;
 
-            for (int i = 0; i < joints.Count; i++)
+            for (int i = 0; i < simJoints.Count; i++)
             {
                 // Atualizando rotacao das juntas
-                string auxVal = floatToString(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
+                string auxVal = floatToString(transformEulerAngles(simJoints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
                 rotAux += "J" + (i + 1).ToString() + " = " + auxVal + "\n";
             }
 
@@ -313,6 +321,13 @@ public class Arm_Controller : MonoBehaviour
 
         // Passando juntas a variaveis estaticas para utilizacao em outras classes
         simJoints = this.joints;
+        minRotLimit = minRotationLimit;
+        maxRotLimit = maxRotationLimit;
+        sFkPosTexts = fkPosTexts;
+        sIkPosTexts = ikPosTexts;
+        sRotTexts = rotTexts;
+        sEndEffectorFk = EndEffectorFk;
+        sEndEffectorIk = EndEffectorIk;
 
         // Armazenando posição inicial das juntas
         for (int i = 0; i < joints.Count; i++) { jointPositions[i] = unity2Servo(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i], false)); }
@@ -348,8 +363,7 @@ public class Arm_Controller : MonoBehaviour
     void Update()
     {
         // Processando entradas
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) readInputFields();
-        if (Input.GetKeyDown(KeyCode.R)) resetArmPosition();
+        //if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) readInputFields();
         if (Input.GetKeyDown(KeyCode.P)) StartScriptBtn.StartIt();
         ProcessSocketData();
         ProcessSliderInput();

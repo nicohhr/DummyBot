@@ -2703,6 +2703,8 @@ GameObject:
   - component: {fileID: 518669035}
   - component: {fileID: 518669034}
   - component: {fileID: 518669037}
+  - component: {fileID: 518669038}
+  - component: {fileID: 518669039}
   m_Layer: 0
   m_Name: ArmController
   m_TagString: Untagged
@@ -2785,6 +2787,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca997baf84a0bf84cb016851541f6f12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &518669038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518669033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ccec75c649b4d24aa6c45342c34c500, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  joints:
+  - {fileID: 642579919}
+  - {fileID: 984069480}
+  - {fileID: 1406823236}
+  - {fileID: 351099783}
+--- !u!114 &518669039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518669033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61c5e0b4e04085a4aa125bc59d0e62aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputFields:
+  - {fileID: 435827773}
+  - {fileID: 1676002715}
+  - {fileID: 889369107}
+  - {fileID: 646075033}
+  joints:
+  - {fileID: 642579919}
+  - {fileID: 984069480}
+  - {fileID: 1406823236}
+  - {fileID: 351099783}
 --- !u!1 &552614001
 GameObject:
   m_ObjectHideFlags: 0
