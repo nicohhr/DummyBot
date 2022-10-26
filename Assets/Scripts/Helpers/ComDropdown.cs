@@ -3,11 +3,13 @@ using UnityEngine.UI;
 using System.IO.Ports;
 using System;
 using TMPro;
+using System.Reflection;
 
 public class ComDropdown : MonoBehaviour
 {
 
-    [SerializeField] public TMP_Dropdown _DropDown; 
+    [SerializeField] public TMP_Dropdown _DropDown;
+    private string[] ports; 
 
     // Start is called before the first frame update
     void Start()
@@ -17,6 +19,9 @@ public class ComDropdown : MonoBehaviour
 
         // Adicionando ouvinte 
         _DropDown.onValueChanged.AddListener(delegate { DropdownItemSelected(_DropDown); });
+
+        // Conferindo se há portas disponíveis e selecionando primeiro valor da lista
+        if (ports.Length > 0) SerialConnection.COMPort = _DropDown.options[0].text;
 
     }
 
@@ -37,7 +42,7 @@ public class ComDropdown : MonoBehaviour
         _DropDown.options.Clear();
 
         // Recuperando lista de portas seriais disponíveis
-        string[] ports = SerialPort.GetPortNames();
+        ports = SerialPort.GetPortNames();
 
         // Adicionando componentes
         foreach (string port in ports)

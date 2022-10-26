@@ -193,14 +193,17 @@ public class PythonCommunication : MonoBehaviour
         }
     }
 
-    private static void StopConnection()
+    public static void StopConnection()
     {
-        isConnected = false;
-        hasStarted = false;
-        print("Ending Connection []");
-        client.Close();
-        listener.Stop();
-        sThread.Abort();
+        if (isConnected)
+        {
+            isConnected = false;
+            hasStarted = false;
+            print("Ending Connection []");
+            client.Close();
+            listener.Stop();
+            sThread.Abort();
+        }
     }
 
     private void Start()

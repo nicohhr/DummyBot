@@ -25,6 +25,8 @@ public class TabManager : MonoBehaviour
             {
                 tabs[i].SetActive(false);
                 image = tabs[i].GetComponent<Image>();
+                PythonCommunication.StopConnection();
+                Arm_Controller.UpdateIkPos();
                 tempColor = image.color;
                 tempColor.a = 1f;
                 image.color = tempColor;

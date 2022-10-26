@@ -123,12 +123,10 @@ public class Arm_Controller : MonoBehaviour
 
                     if (fkSliders[i].value != 0)
                     {
-                        //rotAux = string.Empty;
                         jointPositions[i] += (fkSliders[i].value * TurnRate);
                         jointPositions[i] = Mathf.Clamp(jointPositions[i], minRotationLimit, maxRotationLimit);
                         setJointPosition(servo2Unity(jointPositions[i]), rotationReferences, i);
                         updateText();
-
                     }
                 }
                 break;
@@ -146,8 +144,8 @@ public class Arm_Controller : MonoBehaviour
                     ikPositions[i] += (ikSliders[i].value * TurnRate/20);
 
                     // Clamping do valor
-                    if (i == 1) ikPositions[i] = Mathf.Clamp(ikPositions[i], -100, 100);
-                    else ikPositions[i] = Mathf.Clamp(ikPositions[i], 0, 100);
+                    if (i == 1) ikPositions[i] = Mathf.Clamp(ikPositions[i], -50, 50);
+                    else ikPositions[i] = Mathf.Clamp(ikPositions[i], 0, 50);
 
                     // Atualizando texto
                     updateText();
@@ -163,8 +161,13 @@ public class Arm_Controller : MonoBehaviour
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
     {
         // Atualizando posições se necessário
-        if (updatePositions) { jointPositions[index] = unity2Servo(angularPos); }
+        if (updatePositions) 
+        { 
+            jointPositions[index] = unity2Servo(angularPos); 
+        }
         //print("i " + index.ToString() + "-> " + jointPositions[index].ToString());
+
+        //if (index == 2) {angularPos = 180 - angularPos; }
 
         // Conferindo referencia da rotacao
         switch (axisSelection[index])
@@ -298,6 +301,11 @@ public class Arm_Controller : MonoBehaviour
 
     }
 
+    public static void UpdateIkPos()
+    {
+        if (sEndEffectorIk != null) inverseKinematics.Set(-sEndEffectorIk.position.x, sEndEffectorIk.position.z, sEndEffectorIk.position.y);
+    }
+
     #endregion
 
     // Start is called before the first frame update
@@ -341,6 +349,7 @@ public class Arm_Controller : MonoBehaviour
         // Definindo posicao desejada incial
         inverseKinematics.Set(-EndEffectorIk.position.x, EndEffectorIk.position.z, EndEffectorIk.position.y);
         initialPos = EndEffectorIk.transform.position;
+
         // Definindo posição de reset desejada
         ResetEndEffectorPos.desiredPosition[2] = initialPos.y;
         ResetEndEffectorPos.desiredPosition[1] = initialPos.z;
@@ -359,8 +368,6 @@ public class Arm_Controller : MonoBehaviour
     void Update()
     {
         // Processando entradas
-        //if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) readInputFields();
-        if (Input.GetKeyDown(KeyCode.P)) StartScriptBtn.StartIt();
         ProcessSocketData();
         ProcessSliderInput();
     }
