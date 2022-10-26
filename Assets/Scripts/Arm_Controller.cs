@@ -74,7 +74,10 @@ public class Arm_Controller : MonoBehaviour
         return (aux + offset).ToString();
     }
 
-    public static float servo2Unity(float servoPos) { return (-1) * (servoPos - 90); }
+    public static float servo2Unity(float servoPos) 
+    { 
+        return (-1) * (servoPos - 90); 
+    }
 
     public static float unity2Servo(float unityPos) { return - unityPos + 90; }
 
@@ -167,7 +170,8 @@ public class Arm_Controller : MonoBehaviour
         }
         //print("i " + index.ToString() + "-> " + jointPositions[index].ToString());
 
-        //if (index == 2) {angularPos = 180 - angularPos; }
+        // Invertendo rotação no caso da junta três
+        if (index == 2 || index == 3) { angularPos = (-1) * angularPos; }
 
         // Conferindo referencia da rotacao
         switch (axisSelection[index])

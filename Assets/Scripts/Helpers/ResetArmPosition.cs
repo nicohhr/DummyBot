@@ -22,6 +22,9 @@ public class ResetArmPosition : MonoBehaviour
         // Atualizando posições se necessário
         if (updatePositions) { Arm_Controller.jointPositions[index] = Arm_Controller.unity2Servo(angularPos); }
 
+        // Invertendo rotação no caso da junta três
+        if (index == 2 || index == 3) { angularPos = (-1) * angularPos; }
+
         // Conferindo referencia da rotacao
         switch ((AxisSelection)axisSelection[index])
         {
