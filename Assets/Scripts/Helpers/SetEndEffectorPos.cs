@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class SetEndEffectorPos : MonoBehaviour
 {
@@ -37,6 +38,9 @@ public class SetEndEffectorPos : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Recuperando instância atual de gamepad
+        Gamepad gamepad = Gamepad.current;
+
         if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && TabManager.selectedTabIndex == 1 && !SetMode && PythonCommunication.isConnected)
         {
             // Recuperando valores dos campos 
@@ -60,7 +64,7 @@ public class SetEndEffectorPos : MonoBehaviour
             InitDiffs();
             print("Seting Position");
 
-        } else if (Input.GetKeyDown(KeyCode.R) && TabManager.selectedTabIndex == 1 && !SetMode && PythonCommunication.isConnected)
+        } else if ((Input.GetKeyDown(KeyCode.R) || (gamepad != null && gamepad.yButton.wasReleasedThisFrame)) && TabManager.selectedTabIndex == 1 && !SetMode && PythonCommunication.isConnected)
         {
             desiredPosition = initialPosition.ToArray();
             SetMode = true;

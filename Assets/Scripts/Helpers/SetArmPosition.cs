@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.InputSystem;
 
 public class SetArmPosition : MonoBehaviour
 {
@@ -84,6 +85,9 @@ public class SetArmPosition : MonoBehaviour
     // Atualizado uma vez por frame
     void Update()
     {
+        // Recuperando instância atual de gamepad
+        Gamepad gamepad = Gamepad.current;
+
         if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && TabManager.selectedTabIndex == 0 && !SetMode)
         {
             // Recuperando posição desejada 
@@ -104,7 +108,7 @@ public class SetArmPosition : MonoBehaviour
             InitDiffs();
 
         }
-        else if (Input.GetKeyDown(KeyCode.R) && TabManager.selectedTabIndex == 0 && !SetMode)
+        else if ((Input.GetKeyDown(KeyCode.R) || (gamepad != null && gamepad.yButton.wasReleasedThisFrame)) && TabManager.selectedTabIndex == 0 && !SetMode)
         {
             desiredJointPosition = new float[] { 90.0F, 90.0F , 90.0F , 90.0F };
             SetMode = true;

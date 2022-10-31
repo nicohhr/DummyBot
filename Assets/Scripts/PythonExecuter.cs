@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
-using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -32,6 +29,7 @@ public class Python_Executer : MonoBehaviour
     void Start()
     {
         // Definindo configurações do processo 
+        processStart.WindowStyle = ProcessWindowStyle.Minimized;
         processStart.UseShellExecute = true;
         processStart.CreateNoWindow = false;
         processStart.RedirectStandardOutput = false;

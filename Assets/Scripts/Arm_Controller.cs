@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using Assets.Scripts;
-using System.Linq;
+using UnityEngine.InputSystem;
+using JetBrains.Annotations;
+using System.Drawing.Text;
+using System.Reflection;
 
 public class Arm_Controller : MonoBehaviour
 {
@@ -12,6 +15,7 @@ public class Arm_Controller : MonoBehaviour
     #region Variaveis
 
     // Definindo colecao de juntas e de controles de juntas 
+    public List<GameObject> jointModels; 
     public List<Transform> joints = new List<Transform>();
     public static List<Transform> simJoints;
     public List<UnityEngine.UI.Slider> fkSliders = new List<UnityEngine.UI.Slider>();
@@ -23,7 +27,10 @@ public class Arm_Controller : MonoBehaviour
     public static float[] jointPositions;
 
     // Definindo velocidades angulares das juntas 
-    public float TurnRate = 1.0f;
+    public float TurnRate = 0.75f;
+
+    // Junta selecionada para rotação com controle 
+    public static int selectedJoint = 0; 
 
     // Definindo limites das juntas 
     [Range(0.0f, 360.0f)]
@@ -53,7 +60,7 @@ public class Arm_Controller : MonoBehaviour
     // Componentes de texto para exibir rotacao 
     [SerializeField] private List<TextMeshProUGUI> rotTexts;
 
-    // Variaveis estatics 
+    // Variaveis estatica s 
     public static float minRotLimit; 
     public static float maxRotLimit;
     public static List<TextMeshProUGUI> sFkPosTexts;
@@ -62,9 +69,14 @@ public class Arm_Controller : MonoBehaviour
     public static Transform sEndEffectorFk;
     public static Transform sEndEffectorIk;
     public static Vector3 initialPos;
+    private static List<GameObject> sJointModels; 
 
     // Objetos para esconder
     public List<GameObject> armHidenParts;
+
+    // Definindo cor de seleção 
+    private static Color servoColor;
+    
 
     #endregion
 
@@ -124,8 +136,6 @@ public class Arm_Controller : MonoBehaviour
                 // Processando Juntas
                 for (int i = 0; i < joints.Count; i++)
                 {
-                    //rotAux = rotText.text;
-
                     if (fkSliders[i].value != 0)
                     {
                         jointPositions[i] += (fkSliders[i].value * TurnRate);
@@ -162,9 +172,106 @@ public class Arm_Controller : MonoBehaviour
                     inverseKinematics.positions = ikPositions;
                 }
 
-
                 break; 
         } 
+    }
+
+    public static void SetServoColor(int index)
+    {
+        // Recuperando render servo atual
+        Renderer servoRender = sJointModels[selectedJoint].GetComponent<Renderer>();
+
+        // Descolorindo servo atual
+        servoRender.material.color = Color.white;
+
+        // Selecionando novo servo 
+        selectedJoint = index;
+
+        // Colorindo servo selecionado
+        servoRender = sJointModels[selectedJoint].GetComponent<Renderer>();
+        servoRender.material.color = servoColor;
+        
+    }
+
+    public static void UncolorServos()
+    {
+        for (int i = 0; i < sJointModels.Count; i++)
+        {
+            Renderer servoRender = sJointModels[i].GetComponent<Renderer>();
+            servoRender.material.color = Color.white;
+        }
+    }
+
+    private void ProcessControllerInput()
+    {
+        // Recuperando controle atual
+        Gamepad gamepad = Gamepad.current;
+
+        if (gamepad != null)
+        {
+            // Recuperando valores dos eixos
+            Vector2 planeInput = gamepad.leftStick.ReadValue();
+            float upTriggerInput = gamepad.rightTrigger.ReadValue();
+            float downTriggerInput = gamepad.leftTrigger.ReadValue();
+
+            
+
+            switch (TabManager.selectedTabIndex)
+            {
+                case 0:
+
+                    // Colorindo junta atual
+                    Renderer servoRenderer = jointModels[selectedJoint].GetComponent<Renderer>();
+                    servoRenderer = jointModels[selectedJoint].GetComponent<Renderer>();
+                    servoRenderer.material.color = servoColor;
+
+                    // Ler setas 
+                    if (gamepad.dpad.left.wasReleasedThisFrame && selectedJoint < jointModels.Count - 1) SetServoColor(selectedJoint + 1);
+                    else if (gamepad.dpad.right.wasReleasedThisFrame && selectedJoint > 0) SetServoColor(selectedJoint - 1);
+
+                    // Alterar posições
+                    jointPositions[selectedJoint] += (upTriggerInput * TurnRate);
+                    jointPositions[selectedJoint] -= (downTriggerInput * TurnRate);
+                    jointPositions[selectedJoint] = Mathf.Clamp(jointPositions[selectedJoint], minRotationLimit, maxRotationLimit);
+                    setJointPosition(servo2Unity(jointPositions[selectedJoint]), rotationReferences, selectedJoint);
+                    updateText();
+
+                    break;
+
+                case 1:
+
+                    if (PythonCommunication.isConnected)
+                    {
+                        // Recuperando posição das juntas
+                        float[] ikPositions = inverseKinematics.positions;
+                        float posRate = 1.0f / 15f;
+
+                        // Atualizando eixo X 
+                        ikPositions[0] += planeInput.y * (posRate);
+                        ikPositions[0] = Mathf.Clamp(ikPositions[0], 0, 50);
+
+                        // Atualizando eixo Y 
+                        ikPositions[1] += planeInput.x * (posRate);
+                        ikPositions[1] = Mathf.Clamp(ikPositions[1], -50, 50);
+
+                        // Atualizando eixo Z
+                        ikPositions[2] += upTriggerInput * (posRate);
+                        ikPositions[2] -= downTriggerInput * (posRate);
+                        ikPositions[2] = Mathf.Clamp(ikPositions[2], 0, 50);
+
+                        // Repassando valores para a instância kinetic info 
+                        inverseKinematics.positions = ikPositions;
+
+                        // Atualizando texto
+                        updateText();
+                    }
+
+                    break;
+            }
+
+            // Definindo botão para inicialização do script
+            if (gamepad.startButton.wasReleasedThisFrame) StartScriptBtn.StartIt();
+        }
     }
 
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
@@ -316,6 +423,7 @@ public class Arm_Controller : MonoBehaviour
         sRotTexts = rotTexts;
         sEndEffectorFk = EndEffectorFk;
         sEndEffectorIk = EndEffectorIk;
+        sJointModels = jointModels;
 
         // Armazenando posição inicial das juntas
         for (int i = 0; i < joints.Count; i++) { jointPositions[i] = unity2Servo(transformEulerAngles(joints[i], (AxisSelection)rotationReferences[i], false)); }
@@ -343,6 +451,11 @@ public class Arm_Controller : MonoBehaviour
         inverseKinematics.Set(-EndEffector.position.x, EndEffector.position.z, EndEffector.position.y);
         initialPos = EndEffector.transform.position;
 
+        // Setando cor primeira junta
+        ColorUtility.TryParseHtmlString("#F07F21", out servoColor);
+        //Renderer servoRenderer = jointModels[selectedJoint].GetComponent<Renderer>();
+        //servoRenderer.material.color = servoColor;
+
         // Definindo posição de reset desejada
         SetEndEffectorPos.initialPosition[2] = initialPos.y;
         SetEndEffectorPos.initialPosition[1] = initialPos.z;
@@ -360,5 +473,7 @@ public class Arm_Controller : MonoBehaviour
         // Processando entradas
         ProcessSocketData();
         ProcessSliderInput();
+        ProcessControllerInput();
+        
     }
 }

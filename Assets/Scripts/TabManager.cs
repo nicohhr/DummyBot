@@ -3,11 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class TabManager : MonoBehaviour
 {
     [SerializeField] public GameObject[] tabs;
     [SerializeField] public GameObject[] modelsToHide;
+    [SerializeField] public bool hideObjects = true;
     [HideInInspector] public static int selectedTabIndex = 0; 
     public void onTabSwitch(GameObject tab)
     {
@@ -34,18 +36,41 @@ public class TabManager : MonoBehaviour
             }
         }
 
+
         if (selectedTabIndex == 0)
         {
-            foreach (GameObject armPart in modelsToHide) armPart.SetActive(true);
+            if(hideObjects) foreach (GameObject armPart in modelsToHide) armPart.SetActive(true);
+            Arm_Controller.SetServoColor(Arm_Controller.selectedJoint);
         }
         else if (selectedTabIndex == 1)
         {
-            foreach (GameObject armPart in modelsToHide) armPart.SetActive(false);
+            if(hideObjects) foreach (GameObject armPart in modelsToHide) armPart.SetActive(false);
+            Arm_Controller.UncolorServos();
         }
+
     }
 
     private void Start()
     {
         onTabSwitch(tabs[selectedTabIndex]);
+    }
+
+    private void ProcessController()
+    {
+        // Recuperando instância atual de gamepad
+        Gamepad gamepad = Gamepad.current;
+
+        // Conferindo se há instâncias
+        if (gamepad != null)
+        {
+            // Alterando posição das abas
+            if (gamepad.rightShoulder.isPressed && selectedTabIndex < tabs.Length - 1) onTabSwitch(tabs[selectedTabIndex + 1]);
+            else if (gamepad.leftShoulder.isPressed && selectedTabIndex > 0) onTabSwitch(tabs[selectedTabIndex - 1]);
+        }
+    }
+
+    private void Update()
+    {
+        ProcessController();
     }
 }
