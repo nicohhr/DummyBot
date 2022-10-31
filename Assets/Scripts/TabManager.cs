@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class TabManager : MonoBehaviour
 {
     [SerializeField] public GameObject[] tabs;
+    [SerializeField] public GameObject[] modelsToHide;
     [HideInInspector] public static int selectedTabIndex = 0; 
     public void onTabSwitch(GameObject tab)
     {
@@ -31,6 +32,15 @@ public class TabManager : MonoBehaviour
                 tempColor.a = 1f;
                 image.color = tempColor;
             }
+        }
+
+        if (selectedTabIndex == 0)
+        {
+            foreach (GameObject armPart in modelsToHide) armPart.SetActive(true);
+        }
+        else if (selectedTabIndex == 1)
+        {
+            foreach (GameObject armPart in modelsToHide) armPart.SetActive(false);
         }
     }
 

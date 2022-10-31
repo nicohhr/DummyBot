@@ -115,7 +115,7 @@ public class PythonCommunication : MonoBehaviour
         }
 
         outputText += "\n";
-        print(outputText);
+        //print(outputText);
 
         // Atualizando posição calculada por forward kinematics e inverse kinematics
         Arm_Controller.forwardKinematics.isLocked = true;

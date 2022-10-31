@@ -16,9 +16,9 @@ public class Arm_Controller : MonoBehaviour
     public static List<Transform> simJoints;
     public List<UnityEngine.UI.Slider> fkSliders = new List<UnityEngine.UI.Slider>();
     public List<UnityEngine.UI.Slider> ikSliders = new List<UnityEngine.UI.Slider>();
-    public List<GameObject> inputFields = new List<GameObject>();
     public Transform EndEffectorFk;
     public Transform EndEffectorIk;
+    public Transform EndEffector;
     public static List<object> rotationReferences = new List<object>() { AxisSelection.Z, AxisSelection.Y, AxisSelection.Y, AxisSelection.Y };
     public static float[] jointPositions;
 
@@ -44,7 +44,6 @@ public class Arm_Controller : MonoBehaviour
     // Labels e entradas de texto
     [SerializeField] public TextMeshProUGUI estimatedFkText; 
     [SerializeField] public TextMeshProUGUI estimatedIkText; 
-    private List<TMP_InputField> inputs = new List<TMP_InputField>(); 
 
     // Componentes de texto para exibir posicao
     [SerializeField] private List<TextMeshProUGUI> fkPosTexts;
@@ -64,11 +63,14 @@ public class Arm_Controller : MonoBehaviour
     public static Transform sEndEffectorIk;
     public static Vector3 initialPos;
 
+    // Objetos para esconder
+    public List<GameObject> armHidenParts;
+
     #endregion
 
     #region Métodos
 
-    private static string floatToString(float number, int decimalNumbers = 2, float offset = 0)
+    public static string floatToString(float number, int decimalNumbers = 2, float offset = 0)
     {
         float aux = (float)(Math.Round((double)number, decimalNumbers));
         return (aux + offset).ToString();
@@ -137,25 +139,29 @@ public class Arm_Controller : MonoBehaviour
             // Inverse Kinematics tab
             case 1:
 
-                // Recuperando posição das juntas
-                float[] ikPositions = inverseKinematics.positions;
-
-                // Processando eixos cartesianos 
-                for (int i = 0; i < 3; i++)
+                if (PythonCommunication.isConnected)
                 {
-                    // Aplicando variação dos sliders 
-                    ikPositions[i] += (ikSliders[i].value * TurnRate/20);
+                    // Recuperando posição das juntas
+                    float[] ikPositions = inverseKinematics.positions;
 
-                    // Clamping do valor
-                    if (i == 1) ikPositions[i] = Mathf.Clamp(ikPositions[i], -50, 50);
-                    else ikPositions[i] = Mathf.Clamp(ikPositions[i], 0, 50);
+                    // Processando eixos cartesianos 
+                    for (int i = 0; i < 3; i++)
+                    {
+                        // Aplicando variação dos sliders 
+                        ikPositions[i] += (ikSliders[i].value * TurnRate/20);
 
-                    // Atualizando texto
-                    updateText();
+                        // Clamping do valor
+                        if (i == 1) ikPositions[i] = Mathf.Clamp(ikPositions[i], -50, 50);
+                        else ikPositions[i] = Mathf.Clamp(ikPositions[i], 0, 50);
+
+                        // Atualizando texto
+                        updateText();
+                    }
+
+                    // Repassando valores para a instância kinetic info 
+                    inverseKinematics.positions = ikPositions;
                 }
 
-                // Repassando valores para a instância kinetic info 
-                inverseKinematics.positions = ikPositions;
 
                 break; 
         } 
@@ -163,12 +169,12 @@ public class Arm_Controller : MonoBehaviour
 
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
     {
+        //print("i " + index.ToString() + "-> " + jointPositions[index].ToString());x
         // Atualizando posições se necessário
-        if (updatePositions) 
-        { 
-            jointPositions[index] = unity2Servo(angularPos); 
+        if (updatePositions)
+        {
+            jointPositions[index] = unity2Servo(angularPos);
         }
-        //print("i " + index.ToString() + "-> " + jointPositions[index].ToString());
 
         // Invertendo rotação no caso da junta três
         if (index == 2 || index == 3) { angularPos = (-1) * angularPos; }
@@ -213,7 +219,8 @@ public class Arm_Controller : MonoBehaviour
             for (int i = 0; i < simJoints.Count; i++)
             {
                 // Atualizando rotacao das juntas
-                string auxVal = floatToString(transformEulerAngles(simJoints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
+                //string auxVal = floatToString(transformEulerAngles(simJoints[i], (AxisSelection)rotationReferences[i]), decimalNumbers: 0);
+                string auxVal = floatToString(jointPositions[i]).ToString();
                 rotAux += "J" + (i + 1).ToString() + " = " + auxVal + "\n";
             }
 
@@ -231,32 +238,6 @@ public class Arm_Controller : MonoBehaviour
         // Reseta os sliders de volta a 0 quando o click do mouse e leavantado
         foreach (UnityEngine.UI.Slider slider in fkSliders) { slider.value = 0; }
         foreach (UnityEngine.UI.Slider slider in ikSliders) { slider.value = 0; }
-    }
-
-    public void readInputFields()
-    {
-        for (int i = 0; i < inputs.Count; i++)
-        {
-            if (inputs[i].text != string.Empty)
-            {
-                // Recuperando entrada de texto
-                jointPositions[i] = float.Parse(inputs[i].text);
-                jointPositions[i] = Mathf.Clamp(jointPositions[i], 0.0f, 180.0f);
-
-                // Convertendo posição referenciada de servo motor para unity
-                float anglePos = servo2Unity(jointPositions[i]);
-
-                // Alterando posição da junta
-                setJointPosition(anglePos, rotationReferences, i);
-
-                // Reprocessando sliders
-                updateText();
-
-                // Apgando entrada 
-                inputs[i].text = string.Empty;
-
-            }
-        }
     }
 
     private void ProcessSocketData()
@@ -310,6 +291,11 @@ public class Arm_Controller : MonoBehaviour
         if (sEndEffectorIk != null) inverseKinematics.Set(-sEndEffectorIk.position.x, sEndEffectorIk.position.z, sEndEffectorIk.position.y);
     }
 
+    public static void UpdateIK()
+    {
+        inverseKinematics.Set(-sEndEffectorIk.position.x, sEndEffectorIk.position.z, sEndEffectorIk.position.y);
+    }
+
     #endregion
 
     // Start is called before the first frame update
@@ -350,18 +336,18 @@ public class Arm_Controller : MonoBehaviour
             slider.maxValue = 1;
         }
 
+        // Escondendo partes desejadas do braço 
+        //foreach (GameObject armPart in armHidenParts) armPart.SetActive(false);
+
         // Definindo posicao desejada incial
-        inverseKinematics.Set(-EndEffectorIk.position.x, EndEffectorIk.position.z, EndEffectorIk.position.y);
-        initialPos = EndEffectorIk.transform.position;
+        inverseKinematics.Set(-EndEffector.position.x, EndEffector.position.z, EndEffector.position.y);
+        initialPos = EndEffector.transform.position;
 
         // Definindo posição de reset desejada
-        ResetEndEffectorPos.desiredPosition[2] = initialPos.y;
-        ResetEndEffectorPos.desiredPosition[1] = initialPos.z;
-        ResetEndEffectorPos.desiredPosition[0] = -initialPos.x;
-        Debug.Log("Initial Positions: " + ResetEndEffectorPos.desiredPosition[0].ToString() + " " + ResetEndEffectorPos.desiredPosition[1].ToString() + " " + ResetEndEffectorPos.desiredPosition[2].ToString());
-
-        // Recuperando componentes de entrada de posição 
-        for (int i = 0; i < inputFields.Count; i++) { inputs.Add(inputFields[i].GetComponent<TMP_InputField>()); }
+        SetEndEffectorPos.initialPosition[2] = initialPos.y;
+        SetEndEffectorPos.initialPosition[1] = initialPos.z;
+        SetEndEffectorPos.initialPosition[0] = -initialPos.x;
+        Debug.Log("Initial Positions: " + SetEndEffectorPos.initialPosition[0].ToString() + " " + SetEndEffectorPos.initialPosition[1].ToString() + " " + SetEndEffectorPos.initialPosition[2].ToString());
 
         // Exibindo angulos inciais 
         updateText();

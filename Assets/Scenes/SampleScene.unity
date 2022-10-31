@@ -1139,6 +1139,14 @@ MonoBehaviour:
   tabs:
   - {fileID: 1383806417}
   - {fileID: 962564401}
+  modelsToHide:
+  - {fileID: 1622562272}
+  - {fileID: 266309870}
+--- !u!1 &266309870 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -1572758250197061142, guid: a158a0357faa3894ead6cffccfba5846, type: 3}
+  m_PrefabInstance: {fileID: 1491168550}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &267085485
 GameObject:
   m_ObjectHideFlags: 0
@@ -2703,10 +2711,8 @@ GameObject:
   - component: {fileID: 518669035}
   - component: {fileID: 518669034}
   - component: {fileID: 518669037}
-  - component: {fileID: 518669038}
   - component: {fileID: 518669039}
   - component: {fileID: 518669040}
-  - component: {fileID: 518669041}
   m_Layer: 0
   m_Name: ArmController
   m_TagString: Untagged
@@ -2740,13 +2746,9 @@ MonoBehaviour:
   - {fileID: 1590242004}
   - {fileID: 599891647}
   - {fileID: 1308290601}
-  inputFields:
-  - {fileID: 435827771}
-  - {fileID: 1676002713}
-  - {fileID: 889369105}
-  - {fileID: 646075031}
-  EndEffectorFk: {fileID: 646875850}
-  EndEffectorIk: {fileID: 754869677}
+  EndEffectorFk: {fileID: 2084471051}
+  EndEffectorIk: {fileID: 2084471051}
+  EndEffector: {fileID: 2084471051}
   TurnRate: 1
   maxRotationLimit: 180
   minRotationLimit: 0
@@ -2762,6 +2764,9 @@ MonoBehaviour:
   rotTexts:
   - {fileID: 1262110460}
   - {fileID: 1424773412}
+  armHidenParts:
+  - {fileID: 266309870}
+  - {fileID: 1622562272}
 --- !u!4 &518669035
 Transform:
   m_ObjectHideFlags: 0
@@ -2789,23 +2794,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca997baf84a0bf84cb016851541f6f12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &518669038
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 518669033}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ccec75c649b4d24aa6c45342c34c500, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  joints:
-  - {fileID: 642579919}
-  - {fileID: 984069480}
-  - {fileID: 1406823236}
-  - {fileID: 351099783}
 --- !u!114 &518669039
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2844,18 +2832,6 @@ MonoBehaviour:
   - {fileID: 1649132714}
   - {fileID: 988627481}
   - {fileID: 1859339649}
---- !u!114 &518669041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 518669033}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8d58b1e90de8334090a397130600030, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &552614001
 GameObject:
   m_ObjectHideFlags: 0
@@ -9067,6 +9043,11 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1622562272 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -6080266362570455792, guid: a158a0357faa3894ead6cffccfba5846, type: 3}
+  m_PrefabInstance: {fileID: 1491168550}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1643963589
 GameObject:
   m_ObjectHideFlags: 0
@@ -11252,6 +11233,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2081399984}
   m_CullTransparentMesh: 1
+--- !u!1 &2084471050
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2084471051}
+  m_Layer: 0
+  m_Name: L3Effectoor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2084471051
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2084471050}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.0265, y: -0.0389, z: -0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 351099783}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2097312000
 GameObject:
   m_ObjectHideFlags: 0

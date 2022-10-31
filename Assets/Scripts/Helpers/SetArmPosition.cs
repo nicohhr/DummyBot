@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using static UnityEngine.UI.ContentSizeFitter;
-using UnityEngine.UI;
+using System.Linq;
 
 public class SetArmPosition : MonoBehaviour
 {
@@ -20,9 +19,10 @@ public class SetArmPosition : MonoBehaviour
     // Variáveis de animação
     public static bool SetMode = false;
     private float[] diffs = new float[4];
+    private float[] initialDiffs = new float[4];
+    private bool[] iterationOver = new bool[4];
     private float[] desiredJointPosition = new float[4];
-    private float rotationRate = 0.1F;
-    private int decimals = 1;
+    private float rotationRate = 0.25F;
 
     // Funções
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
@@ -51,7 +51,7 @@ public class SetArmPosition : MonoBehaviour
     void SummSub(float[] deltas, int jointIndex)
     {
         // Recuperar posição e arredondar
-        float actualPos = (float)(Math.Round((double)Arm_Controller.jointPositions[jointIndex], decimals));
+        float actualPos = Arm_Controller.jointPositions[jointIndex];
 
         // Somando / Subtraindo valor da posição
         if (deltas[jointIndex] > 0) actualPos += rotationRate;
@@ -64,10 +64,27 @@ public class SetArmPosition : MonoBehaviour
         Arm_Controller.updateText();
     }
 
+    private void InitDiffs()
+    {
+        // Calculando deltas entre posição atual e desejada
+        for (int i = 0; i < 4; i++)
+        {
+            // Calculando diferenças iniciais
+            diffs[i] = desiredJointPosition[i] - Arm_Controller.jointPositions[i];
+
+            // Conferindo se iteração é ou não necessária
+            if (diffs[i] != 0) iterationOver[i] = false;
+            else iterationOver[i] = true;
+        }
+
+        // Registrando diferenças iniciais 
+        initialDiffs = diffs.ToArray();
+    }
+
     // Atualizado uma vez por frame
     void Update()
     {
-        if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && TabManager.selectedTabIndex == 0 && !SetMode && !ResetEndEffectorPos.SetMode && !ResetArmPosition.RestartMode)
+        if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && TabManager.selectedTabIndex == 0 && !SetMode)
         {
             // Recuperando posição desejada 
             for (int i = 0; i < inputFields.Count; i++)
@@ -77,39 +94,57 @@ public class SetArmPosition : MonoBehaviour
                     desiredJointPosition[i] = float.Parse(inputFields[i].text);
                     desiredJointPosition[i] = Mathf.Clamp(desiredJointPosition[i], 0.0f, 180.0f);
                     inputFields[i].text = string.Empty;
+                    print("DesiredPos -> " + desiredJointPosition[0].ToString());
                 }
-                else
-                {
-                    desiredJointPosition[i] = Arm_Controller.transformEulerAngles(joints[i], (Arm_Controller.AxisSelection)Arm_Controller.rotationReferences[i]);
-                }
+                else desiredJointPosition[i] = Arm_Controller.jointPositions[i];
             }
 
             SetMode = true;
             print("Seting Position");
+            InitDiffs();
+
+        }
+        else if (Input.GetKeyDown(KeyCode.R) && TabManager.selectedTabIndex == 0 && !SetMode)
+        {
+            desiredJointPosition = new float[] { 90.0F, 90.0F , 90.0F , 90.0F };
+            SetMode = true;
+            InitDiffs();
         }
 
         if (SetMode)
         {
-            // Calculando deltas entre posição atual e desejada
-            for (int i = 0; i < 4; i++)
-            {
-                diffs[i] = desiredJointPosition[i] - Arm_Controller.jointPositions[i];
-                diffs[i] = (float)(Math.Round((double)diffs[i], decimals));
-            }
 
-            if ((diffs[0] != 0) || (diffs[1] != 0) || (diffs[2] != 0) || (diffs[3] != 0))
+            string auxString = "diffs -> ";
+            for (int i = 0; i < diffs.Length; i++)
+            {
+                auxString += diffs[i].ToString() + " | ";
+            }
+            print(auxString);
+
+            if (!iterationOver[0] || !iterationOver[1] || !iterationOver[2] || !iterationOver[3])
             {
                 for (int i = 0; i < 4; i++)
                 {
                     // Conferindo se ainda não se chegou na posição desejada 
-                    if (diffs[i] != 0)
+                    if (!iterationOver[i])
                     {
                         // Somando subtraindo posição
                         SummSub(diffs, i);
 
                         // Recalculando delta
                         diffs[i] = desiredJointPosition[i] - Arm_Controller.jointPositions[i];
-                        diffs[i] = (float)(Math.Round((double)diffs[i], decimals));
+
+                        // Conferindo se sinal mudou
+                        if ((Mathf.Sign(initialDiffs[i]) != Mathf.Sign(diffs[i])) || diffs[i] == 0)
+                        {
+                            // Informando fim de iteração 
+                            iterationOver[i] = true;
+
+                            // Clamplar angulo em valor de angulo desejado
+                            setJointPosition(Arm_Controller.servo2Unity(desiredJointPosition[i]), Arm_Controller.rotationReferences, i, false);
+                            Arm_Controller.jointPositions[i] = desiredJointPosition[i];
+
+                        }
                     }
                 }
             }

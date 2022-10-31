@@ -34,6 +34,10 @@ public class StartScriptBtn : MonoBehaviour
                 Python_Executer.ExecIt(SettingsManager.settings.FkScriptPath);
                 break;
             case 1:
+                // Registrando posição atual do end effector 
+                Arm_Controller.UpdateIK();
+
+                // Executando script
                 Python_Executer.ExecIt(SettingsManager.settings.IkScriptPath);
                 break;
         }

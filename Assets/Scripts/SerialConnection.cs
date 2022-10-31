@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.IO.Ports;
 using System.Threading;
-using Unity.Collections.LowLevel.Unsafe;
+using System.Security.Cryptography;
 
 public static class SerialConnection
 {
@@ -11,8 +11,22 @@ public static class SerialConnection
     public static bool hasStarted = false;
 
     [HideInInspector] public static SerialPort serialPort;
-    private static Thread sThread; 
-    
+    private static Thread sThread;
+
+    /// <summary>
+    /// Converte valro de 0 a 180 para resolução de 0 a 255
+    /// </summary>
+    public static int conv(float x)
+    {
+        float in_min = 0;
+        float in_max = 180;
+        float out_min = 0;
+        float out_max = 255; 
+
+        float convAux = ((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+        return (int)Mathf.Clamp(convAux, out_min, out_max);
+    }
+
     /// <summary>
     /// Inicializando conexao
     /// </summary>
@@ -38,10 +52,8 @@ public static class SerialConnection
     /// <param name="servoPos">Posição d ecada junta de 0 a 180</param>
     public static void SendJointPositions(float[] servoPos)
     {
-
         // Inicializar array de bytes com cabechalho informação e terminador de mensagem 
-        byte[] msg = {79, 80, (byte)servoPos[0], (byte)servoPos[1], (byte)servoPos[2], (byte)servoPos[3], 90, 90, 69, 68};
-
+        byte[] msg = {79, 80, (byte)conv(servoPos[0]), (byte)conv(servoPos[1]), (byte)conv(servoPos[2]), (byte)conv(servoPos[3]), 90, 90, 69, 68};
 
         // Enviar mensagem para o controlador
         serialPort.Write(msg, 0, 10);

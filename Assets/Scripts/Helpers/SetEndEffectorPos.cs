@@ -1,19 +1,37 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
 public class SetEndEffectorPos : MonoBehaviour
 {
     // Constantes
-    private const int DECIMALS = 2;
-    private const float ROTATION_RATE = 0.01F;
+    private static float turnRate = 0.035F;
 
     [SerializeField] public List<TMP_InputField> inputFields;
+    [HideInInspector]public static float[] initialPosition = new float[3];
     public static bool SetMode = false;
+    private float[] initialDiffs = new float[3];
+    private bool[] iterationOver = new bool[3];
     private float[] desiredPosition = new float[3];
     private float[] diffs = new float[3];
+
+    private void InitDiffs()
+    {
+        // Calculando deltas entre posição atual e desejada\\
+        for (int i = 0; i < 3; i++)
+        {
+            // Calculando diferenças iniciais
+            diffs[i] = desiredPosition[i] - Arm_Controller.inverseKinematics.positions[i];
+
+            // Conferindo se iteração é ou não necessária
+            if (diffs[i] != 0) iterationOver[i] = false;
+            else iterationOver[i] = true;
+        }
+
+        // Registrando diferenças iniciais 
+        initialDiffs = diffs.ToArray();
+    }
     
 
     // Update is called once per frame
@@ -39,35 +57,36 @@ public class SetEndEffectorPos : MonoBehaviour
 
             // Permitindo entrar em modo de reposicionamento
             SetMode = true;
+            InitDiffs();
+            print("Seting Position");
+
+        } else if (Input.GetKeyDown(KeyCode.R) && TabManager.selectedTabIndex == 1 && !SetMode && PythonCommunication.isConnected)
+        {
+            desiredPosition = initialPosition.ToArray();
+            SetMode = true;
+            InitDiffs();
+            print("Reseting Position");
         }
 
         // Conferindo se modo de reposicionamento está ativo
         if (SetMode)
         {
-            // Calculando deltas entre posição atual e desejada\\
-            for (int i = 0; i < 3; i++)
-            {
-                diffs[i] = desiredPosition[i] - Arm_Controller.inverseKinematics.positions[i];
-                diffs[i] = (float)(Math.Round((double)diffs[i], DECIMALS));
-            }
-
             // Conferindo se há deltas com valor absoluto não nulo
-            if ((diffs[0] != 0) || (diffs[1] != 0) || (diffs[2] != 0))
+            if (!iterationOver[0] || !iterationOver[1] || !iterationOver[2])
             {
                 // Para cada eixo de referência
                 for (int i = 0; i < 3; i++)
                 {
                     // Conferindo se ainda não chegou na posição desejada 
-                    if (diffs[i] != 0)
+                    if (!iterationOver[i])
                     {
                         // Recuperar posição e arrendondar 
-                        float actualPos = (float)(Math.Round((double)Arm_Controller.inverseKinematics.positions[i], DECIMALS));
+                        float actualPos = Arm_Controller.inverseKinematics.positions[i];
                         print(actualPos);
 
                         // Somando / Subtraindo valor da posição 
-                        if (diffs[i] > 0) actualPos += ROTATION_RATE;
-                        else actualPos -= ROTATION_RATE;
-
+                        if (diffs[i] >= 0) actualPos += turnRate;
+                        else actualPos -= turnRate;
 
                         // Definindo posição desejada do end effector
                         Arm_Controller.inverseKinematics.setPosition(actualPos, i);
@@ -77,7 +96,17 @@ public class SetEndEffectorPos : MonoBehaviour
 
                         // Recalculando delta 
                         diffs[i] = desiredPosition[i] - Arm_Controller.inverseKinematics.positions[i];
-                        diffs[i] = (float)(Math.Round((double)diffs[i], DECIMALS));
+
+                        // Conferindo se sinal mudou
+                        if ((Mathf.Sign(initialDiffs[i]) != Mathf.Sign(diffs[i])) || diffs[i] == 0)
+                        {
+                            // Informando fim de iteração 
+                            iterationOver[i] = true;
+
+                            // Clamplar angulo em valor de angulo desejado
+                            Arm_Controller.inverseKinematics.setPosition(desiredPosition[i], i);
+
+                        }
                     }
                 }
             }
