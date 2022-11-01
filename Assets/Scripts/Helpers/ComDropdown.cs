@@ -4,16 +4,21 @@ using System.IO.Ports;
 using System;
 using TMPro;
 using System.Reflection;
+using Unity.VisualScripting;
 
 public class ComDropdown : MonoBehaviour
 {
 
     [SerializeField] public TMP_Dropdown _DropDown;
-    private string[] ports; 
+    private static TMP_Dropdown Dropdown;
+    private static string[] ports; 
 
     // Start is called before the first frame update
     void Start()
     {
+        // Repassando variáveis
+        Dropdown = _DropDown;
+
         // Atualizando lista de portas disponíveis
         UpdateSerialPorts();
 
@@ -36,22 +41,44 @@ public class ComDropdown : MonoBehaviour
 
 
 
-    public void UpdateSerialPorts()
+    public static void UpdateSerialPorts()
     {
         // Limpando opções iniciais 
-        _DropDown.options.Clear();
+        if (Dropdown != null) Dropdown.options.Clear();
 
         // Recuperando lista de portas seriais disponíveis
         ports = SerialPort.GetPortNames();
 
-        // Adicionando componentes
-        foreach (string port in ports)
+        if (ports.Length == 1)
         {
-            _DropDown.options.Add(new TMP_Dropdown.OptionData() { text = port });
+            // Tornando botão de Conexão clicavel 
+            ConnectArmBtn.MakeInteracteble();
+
+            // Adicionando componente 
+            Dropdown.options.Add(new TMP_Dropdown.OptionData() { text = ports[0] });
+
+            // Selecionando porta serial (por ser a única)
+            SerialConnection.COMPort = Dropdown.options[0].text;
+        }
+        else if (ports.Length > 0)
+        {
+            // Adicionando componentes
+            foreach (string port in ports)
+            {
+                Dropdown.options.Add(new TMP_Dropdown.OptionData() { text = port });
+            }
+
+            // Tornando botão de Conexão clicavel 
+            ConnectArmBtn.MakeInteracteble();
+
+        } else
+        {   
+            // Desabilitando botão de conexão
+            ConnectArmBtn.MakeNonIteracteble();
         }
 
         // Atualizando valor exibido 
-        _DropDown.RefreshShownValue();
+        Dropdown.RefreshShownValue();
     }
 }
 

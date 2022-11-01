@@ -138,7 +138,8 @@ public class Arm_Controller : MonoBehaviour
                 {
                     if (fkSliders[i].value != 0)
                     {
-                        jointPositions[i] += (fkSliders[i].value * TurnRate);
+                        SetServoColor(i);
+                        jointPositions[i] += (fkSliders[i].value * SettingsManager.settings.FkRate);
                         jointPositions[i] = Mathf.Clamp(jointPositions[i], minRotationLimit, maxRotationLimit);
                         setJointPosition(servo2Unity(jointPositions[i]), rotationReferences, i);
                         updateText();
@@ -158,7 +159,7 @@ public class Arm_Controller : MonoBehaviour
                     for (int i = 0; i < 3; i++)
                     {
                         // Aplicando variação dos sliders 
-                        ikPositions[i] += (ikSliders[i].value * TurnRate/20);
+                        ikPositions[i] += (ikSliders[i].value * SettingsManager.settings.IkRate);
 
                         // Clamping do valor
                         if (i == 1) ikPositions[i] = Mathf.Clamp(ikPositions[i], -50, 50);
@@ -178,19 +179,25 @@ public class Arm_Controller : MonoBehaviour
 
     public static void SetServoColor(int index)
     {
-        // Recuperando render servo atual
-        Renderer servoRender = sJointModels[selectedJoint].GetComponent<Renderer>();
+        try
+        {
+            // Recuperando render servo atual
+            Renderer servoRender = sJointModels[selectedJoint].GetComponent<Renderer>();
 
-        // Descolorindo servo atual
-        servoRender.material.color = Color.white;
+            // Descolorindo servo atual
+            servoRender.material.color = Color.white;
 
-        // Selecionando novo servo 
-        selectedJoint = index;
+            // Selecionando novo servo 
+            selectedJoint = index;
 
-        // Colorindo servo selecionado
-        servoRender = sJointModels[selectedJoint].GetComponent<Renderer>();
-        servoRender.material.color = servoColor;
-        
+            // Colorindo servo selecionado
+            servoRender = sJointModels[selectedJoint].GetComponent<Renderer>();
+            servoRender.material.color = servoColor;
+        }
+        catch (NullReferenceException e)
+        {
+            Debug.Log(e);
+        }
     }
 
     public static void UncolorServos()
@@ -230,8 +237,8 @@ public class Arm_Controller : MonoBehaviour
                     else if (gamepad.dpad.right.wasReleasedThisFrame && selectedJoint > 0) SetServoColor(selectedJoint - 1);
 
                     // Alterar posições
-                    jointPositions[selectedJoint] += (upTriggerInput * TurnRate);
-                    jointPositions[selectedJoint] -= (downTriggerInput * TurnRate);
+                    jointPositions[selectedJoint] += (upTriggerInput * SettingsManager.settings.FkRate);
+                    jointPositions[selectedJoint] -= (downTriggerInput * SettingsManager.settings.FkRate);
                     jointPositions[selectedJoint] = Mathf.Clamp(jointPositions[selectedJoint], minRotationLimit, maxRotationLimit);
                     setJointPosition(servo2Unity(jointPositions[selectedJoint]), rotationReferences, selectedJoint);
                     updateText();
@@ -244,7 +251,7 @@ public class Arm_Controller : MonoBehaviour
                     {
                         // Recuperando posição das juntas
                         float[] ikPositions = inverseKinematics.positions;
-                        float posRate = 1.0f / 15f;
+                        float posRate = SettingsManager.settings.IkRate;
 
                         // Atualizando eixo X 
                         ikPositions[0] += planeInput.y * (posRate);
@@ -453,8 +460,13 @@ public class Arm_Controller : MonoBehaviour
 
         // Setando cor primeira junta
         ColorUtility.TryParseHtmlString("#F07F21", out servoColor);
-        //Renderer servoRenderer = jointModels[selectedJoint].GetComponent<Renderer>();
-        //servoRenderer.material.color = servoColor;
+        SetServoColor(0);
+
+        // Carregando configurações 
+        SettingsManager.Load();
+
+        // Definindo porta serial 
+        //ComDropdown.UpdateSerialPorts();
 
         // Definindo posição de reset desejada
         SetEndEffectorPos.initialPosition[2] = initialPos.y;

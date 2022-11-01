@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 public class SetEndEffectorPos : MonoBehaviour
 {
     // Constantes
-    private static float turnRate = 0.035F;
+    private static float turnRate;
 
     [SerializeField] public List<TMP_InputField> inputFields;
     [HideInInspector]public static float[] initialPosition = new float[3];
@@ -40,6 +40,7 @@ public class SetEndEffectorPos : MonoBehaviour
     {
         // Recuperando instância atual de gamepad
         Gamepad gamepad = Gamepad.current;
+        turnRate = SettingsManager.settings.IkRate;
 
         if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && TabManager.selectedTabIndex == 1 && !SetMode && PythonCommunication.isConnected)
         {
@@ -109,7 +110,6 @@ public class SetEndEffectorPos : MonoBehaviour
 
                             // Clamplar angulo em valor de angulo desejado
                             Arm_Controller.inverseKinematics.setPosition(desiredPosition[i], i);
-
                         }
                     }
                 }

@@ -3454,6 +3454,7 @@ GameObject:
   - component: {fileID: 662579000}
   - component: {fileID: 662578999}
   - component: {fileID: 662579002}
+  - component: {fileID: 662579003}
   m_Layer: 5
   m_Name: SettingsBtn
   m_TagString: Untagged
@@ -3539,6 +3540,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 662579003}
+        m_TargetAssemblyTypeName: SettingsBtn, Assembly-CSharp
+        m_MethodName: OnAction
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &662579000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3591,6 +3604,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PanelId: SettingsPanel
   Behaviour: 0
+--- !u!114 &662579003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 662578997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68020f2210fe4244f8a9d973cb427f24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  button: {fileID: 662578999}
 --- !u!1 &695127323
 GameObject:
   m_ObjectHideFlags: 0

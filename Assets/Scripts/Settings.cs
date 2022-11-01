@@ -15,12 +15,18 @@ public class Settings
     private string _VenvPath;
     private string _FkScriptPath;
     private string _IkScriptPath;
-    private int _BaudRateValue; 
+    private int _BaudRateValue;
+    private float _IkRate;
+    private float _FkRate;
 
     public string VenvPath { get { return _VenvPath; } set { _VenvPath = value; } }
     public string FkScriptPath { get { return _FkScriptPath; } set { _FkScriptPath = value; } }
     public string IkScriptPath { get { return _IkScriptPath; } set { _IkScriptPath = value; } }
     public int BaudRateValue { get { return _BaudRateValue; } set { _BaudRateValue = value; } }
+    public float IkRateDiv { get { return _IkRate; } set { _IkRate = value; } }
+    [DoNotSerialize] public float IkRate { get => 1 / _IkRate; }
+    public float FkRate { get { return _FkRate; } set { _FkRate = value; } }
+
 
     public Settings()
     {
@@ -28,5 +34,7 @@ public class Settings
         _FkScriptPath = string.Empty;
         _IkScriptPath = string.Empty;
         _BaudRateValue = 0;
+        _IkRate = 1.0f / 15f;
+        _FkRate = 0.75f;
     }
 }

@@ -52,7 +52,7 @@ public class TabManager : MonoBehaviour
 
     private void Start()
     {
-        onTabSwitch(tabs[selectedTabIndex]);
+        onTabSwitch(tabs[0]);
     }
 
     private void ProcessController()

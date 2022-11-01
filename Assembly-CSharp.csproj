@@ -119,6 +119,9 @@
     <Compile Include="Assets\Scripts\Buttons\HidePanelButton.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01.cs" />
     <Compile Include="Assets\Scripts\Helpers\SetArmPosition.cs" />
+    <Compile Include="Assets\Scripts\Buttons\CancelSettingsBtn.cs" />
+    <Compile Include="Assets\Scripts\Buttons\SetRatesBtn.cs" />
+    <Compile Include="Assets\Scripts\Buttons\SettingsBtn.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

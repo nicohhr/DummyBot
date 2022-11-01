@@ -23,7 +23,7 @@ public class SetArmPosition : MonoBehaviour
     private float[] initialDiffs = new float[4];
     private bool[] iterationOver = new bool[4];
     private float[] desiredJointPosition = new float[4];
-    private float rotationRate = 0.25F;
+    private float rotationRate;
 
     // Funções
     private void setJointPosition(float angularPos, List<object> axisSelection, int index, bool updatePositions = false)
@@ -87,6 +87,7 @@ public class SetArmPosition : MonoBehaviour
     {
         // Recuperando instância atual de gamepad
         Gamepad gamepad = Gamepad.current;
+        rotationRate = SettingsManager.settings.FkRate / 2;
 
         if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && TabManager.selectedTabIndex == 0 && !SetMode)
         {

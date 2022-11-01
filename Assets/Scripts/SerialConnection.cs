@@ -2,6 +2,7 @@ using UnityEngine;
 using System.IO.Ports;
 using System.Threading;
 using System.Security.Cryptography;
+using System.IO;
 
 public static class SerialConnection
 {
@@ -52,22 +53,29 @@ public static class SerialConnection
     /// <param name="servoPos">Posição d ecada junta de 0 a 180</param>
     public static void SendJointPositions(float[] servoPos)
     {
-        // Inicializar array de bytes com cabechalho informação e terminador de mensagem 
-        byte[] msg = {79, 80, (byte)conv(servoPos[0]), (byte)conv(servoPos[1]), (byte)conv(servoPos[2]), (byte)conv(servoPos[3]), 90, 90, 69, 68};
-
-        // Enviar mensagem para o controlador
-        serialPort.Write(msg, 0, 10);
-
-        // Printando valores enviados 
-        string auxOut = string.Empty;
-
-        foreach (byte num in msg)
+        try
         {
-            auxOut += num.ToString() + " | ";
+            // Inicializar array de bytes com cabechalho informação e terminador de mensagem 
+            byte[] msg = {79, 80, (byte)conv(servoPos[0]), (byte)conv(servoPos[1]), (byte)conv(servoPos[2]), (byte)conv(servoPos[3]), 90, 90, 69, 68};
+
+            // Enviar mensagem para o controlador
+            serialPort.Write(msg, 0, 10);
+
+            // Printando valores enviados 
+            string auxOut = string.Empty;
+
+            foreach (byte num in msg)
+            {
+                auxOut += num.ToString() + " | ";
+            }
+
+            Debug.Log("Serial Data: " + auxOut);
         }
-
-        Debug.Log("Serial Data: " + auxOut);
-
+        catch (IOException)
+        {
+            Debug.Log("Arm Disconnected");
+            Stop();
+        }
     }
 
     private static void SendPositions()
