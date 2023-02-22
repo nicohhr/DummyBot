@@ -23,7 +23,7 @@ public class ConnectArmBtn : MonoBehaviour
             {
                 // Inicializando conexão
                 SerialConnection.Start();
-                ColorBlock cb = button.colors;
+                //ColorBlock cb = button.colors;
 
                 // Alterando Cor
                 button.image.color = greenColor;
@@ -32,7 +32,7 @@ public class ConnectArmBtn : MonoBehaviour
             {
                 Debug.Log("Non COM Port Selected");
                 button.interactable = false;
-                TurnWhite();
+                ConnectArmBtn.TurnWhite();
             }
 
         } 
@@ -59,7 +59,7 @@ public class ConnectArmBtn : MonoBehaviour
     public static void MakeNonIteracteble()
     {
         btn.interactable = false;
-        TurnWhite();
+        ConnectArmBtn.TurnWhite();
     }
     
     public static void MakeInteracteble()
@@ -80,7 +80,7 @@ public class ConnectArmBtn : MonoBehaviour
             TurnGreen();
         } else
         {
-            TurnWhite();
+            ConnectArmBtn.TurnWhite();
         }
     }
 }

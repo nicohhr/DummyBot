@@ -15,7 +15,7 @@ public static class SerialConnection
     private static Thread sThread;
 
     /// <summary>
-    /// Converte valro de 0 a 180 para resolução de 0 a 255
+    /// Converte valor de 0 a 180 para resolução de 0 a 255
     /// </summary>
     public static int conv(float x)
     {
@@ -61,7 +61,7 @@ public static class SerialConnection
             // Enviar mensagem para o controlador
             serialPort.Write(msg, 0, 10);
 
-            // Printando valores enviados 
+            // Printando valores enviados
             string auxOut = string.Empty;
 
             foreach (byte num in msg)

@@ -69,14 +69,15 @@ public class Arm_Controller : MonoBehaviour
     public static Transform sEndEffectorFk;
     public static Transform sEndEffectorIk;
     public static Vector3 initialPos;
-    private static List<GameObject> sJointModels; 
+    private static List<GameObject> sJointModels;
+    public static string fk_msg = string.Empty;
+    public static string ik_msg = string.Empty;
 
     // Objetos para esconder
     public List<GameObject> armHidenParts;
 
     // Definindo cor de seleção 
     private static Color servoColor;
-    
 
     #endregion
 
@@ -138,10 +139,19 @@ public class Arm_Controller : MonoBehaviour
                 {
                     if (fkSliders[i].value != 0)
                     {
+                        // Destacando servo autado 
                         SetServoColor(i);
+                        
+                        // Aplicando variacao de posição 
                         jointPositions[i] += (fkSliders[i].value * SettingsManager.settings.FkRate);
+
+                        // Cortando em valor maximo e minimo de rotacao definidos
                         jointPositions[i] = Mathf.Clamp(jointPositions[i], minRotationLimit, maxRotationLimit);
+
+                        // Convertendo posicao em referencial Unity e aplicando no modelo 3D
                         setJointPosition(servo2Unity(jointPositions[i]), rotationReferences, i);
+
+                        // Atualizando posicoes exibidas ao usuario
                         updateText();
                     }
                 }
@@ -150,15 +160,16 @@ public class Arm_Controller : MonoBehaviour
             // Inverse Kinematics tab
             case 1:
 
+                // Caso houver um script sendo executado
                 if (PythonCommunication.isConnected)
                 {
                     // Recuperando posição das juntas
                     float[] ikPositions = inverseKinematics.positions;
 
-                    // Processando eixos cartesianos 
+                    // Processando eixos cartesianos (x, y e z)
                     for (int i = 0; i < 3; i++)
                     {
-                        // Aplicando variação dos sliders 
+                        // Aplicando variacao de posicao dos sliders
                         ikPositions[i] += (ikSliders[i].value * SettingsManager.settings.IkRate);
 
                         // Clamping do valor
@@ -315,6 +326,7 @@ public class Arm_Controller : MonoBehaviour
         {
             // Atualizando posicao final
             textMesh.text = "X: " + floatToString(-sEndEffectorFk.position.x) + "\nY: " + floatToString((sEndEffectorFk.position.z)) + "\nZ: " + floatToString(sEndEffectorFk.position.y);
+            fk_msg = floatToString(-sEndEffectorFk.position.x) + " " + floatToString(sEndEffectorFk.position.z) + " " + floatToString(sEndEffectorFk.position.y);
         }
 
         // Atualizando exibicao de posicao ik 
@@ -322,6 +334,7 @@ public class Arm_Controller : MonoBehaviour
         {
             // Atualizando posicao final
             textMesh.text = "X: " + floatToString(-sEndEffectorIk.position.x) + "\nY: " + floatToString((sEndEffectorIk.position.z)) + "\nZ: " + floatToString(sEndEffectorIk.position.y);
+            ik_msg = floatToString(-sEndEffectorIk.position.x) + " " + floatToString(sEndEffectorIk.position.z) + " " + floatToString(sEndEffectorIk.position.y);
         }
 
         // Atualizando exibicao de rotacao 
@@ -362,7 +375,7 @@ public class Arm_Controller : MonoBehaviour
             // Conferir aba selecionada
             switch (TabManager.selectedTabIndex)
             {
-                // Forward Kinematics tab
+                // Aba de Forward Kinematics Selecionada
                 case 0:
 
                     // Atualizar dados de posição de end effector calculadas pelo python 
@@ -372,7 +385,7 @@ public class Arm_Controller : MonoBehaviour
                     PythonCommunication.sendSimulatorData(ConnectionMode.FK);
                     break;
 
-                // Inverse kinematics tab 
+                // Aba de Inverse kinematics Selecionada                                                                            
                 case 1:
 
                     // Atualizando posicao desejada exibida

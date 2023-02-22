@@ -29,9 +29,9 @@ public class Python_Executer : MonoBehaviour
     void Start()
     {
         // Definindo configurações do processo 
-        processStart.WindowStyle = ProcessWindowStyle.Minimized;
         processStart.UseShellExecute = true;
         processStart.CreateNoWindow = false;
+        processStart.WindowStyle = ProcessWindowStyle.Minimized;
         processStart.RedirectStandardOutput = false;
         processStart.RedirectStandardError = false;
     }
